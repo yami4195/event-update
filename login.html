@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Event Management System</title>
+  
+  <style>
+    :root {
+      --bg: #02061a;
+      --surface: rgba(7, 17, 48, 0.86);
+      --text: #f8faff;
+      --muted: #a8b3d7;
+      --primary: #6b63ff;
+      --primary-dark: #8f3dff;
+      --border: rgba(146, 162, 255, 0.22);
+      --danger: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Inter", Arial, sans-serif;
+      background:
+        radial-gradient(850px 420px at 28% 50%, rgba(102, 104, 255, 0.24), transparent 68%),
+        radial-gradient(700px 340px at 65% 44%, rgba(139, 61, 255, 0.16), transparent 70%),
+        linear-gradient(160deg, #030a26 0%, #02061a 100%);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+
+    .card {
+      width: min(420px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 20px 45px rgba(9, 13, 36, 0.55);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 0.9rem;
+      color: #c8d2ff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: #ffffff;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      font-size: 0.95rem;
+    }
+
+    form {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.72rem 0.85rem;
+      font: inherit;
+      color: #e9edff;
+      background: rgba(2, 8, 29, 0.62);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 0.78rem 1rem;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+      margin-top: 0.35rem;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .error {
+      display: none;
+      border-radius: 10px;
+      padding: 0.7rem 0.8rem;
+      font-size: 0.9rem;
+      background: rgba(248, 113, 113, 0.16);
+      color: #fecaca;
+    }
+
+    .switch-link {
+      margin-top: 1rem;
+      font-size: 0.92rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .switch-link a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <section class="card">
+    <a class="back-link" href="index.html">&larr; Back to Home</a>
+    <h1 id="login-title">Welcome Back</h1>
+    <p class="subtitle">Login to access your Event Management account.</p>
+
+    <div id="errorMessage" class="error" role="alert"></div>
+
+    <form id="loginForm" novalidate>
+      <label for="email">
+        Email
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </label>
+
+      <label for="password">
+        Password
+        <input type="password" id="password" name="password" placeholder="Enter password" required>
+      </label>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <p class="switch-link">
+      Don't have an account? <a href="signup.html">Signup</a>
+    </p>
+  </section>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const errorMessage = document.getElementById("errorMessage");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = "block";
+    }
+
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      errorMessage.style.display = "none";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) {
+        showError("Please fill in all fields.");
+        return;
+      }
+
+      if (!emailRegex.test(email)) {
+        showError("Please enter a valid email address.");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem("emsUsers") || "[]");
+      const user = users.find((storedUser) => storedUser.email.toLowerCase() === email.toLowerCase());
+
+      if (!user || user.password !== password) {
+        showError("Invalid email or password.");
+        return;
+      }
+
+      localStorage.setItem("emsCurrentUser", JSON.stringify(user));
+
+      if (user.role === "Organizer") {
+        window.location.href = "organizer-dashboard.html";
+      } else {
+        window.location.href = "customer-dashboard.html";
+      }
+    });
+  </script>
+</body>
+</html>
