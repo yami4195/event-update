@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HU Events | Organizer Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="organizer-dashboard">
+  <header class="header">
+    <nav class="navbar container">
+      <div class="nav-left">
+        <a href="index.html" class="logo">HU Events</a>
+      </div>
+      <div class="nav-center">
+        <div class="main-links">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="about.html">About Us</a>
+        </div>
+      </div>
+      <div id="navAuthArea" class="nav-actions"></div>
+    </nav>
+  </header>
+
+  <main class="section">
+    <div class="container dashboard-grid">
+      <section class="stats-grid">
+        <article class="card"><h3>Total Events</h3><p id="statTotalEvents">0</p></article>
+        <article class="card"><h3>Total Registrations</h3><p id="statTotalRegistrations">0</p></article>
+        <article class="card"><h3>Upcoming</h3><p id="statUpcomingEvents">0</p></article>
+        <article class="card"><h3>Past</h3><p id="statPastEvents">0</p></article>
+      </section>
+
+      <section class="card">
+        <h2>Create / Edit Event</h2>
+        <form id="eventForm">
+          <input id="editEventId" type="hidden">
+          <div class="form-grid">
+            <label>Title
+              <input id="eventTitle" type="text" required>
+            </label>
+            <label>Date
+              <input id="eventDate" type="date" required>
+            </label>
+            <label>Time
+              <input id="eventTime" type="time" required>
+            </label>
+            <label>Location
+              <input id="eventLocation" type="text" required>
+            </label>
+            <label>Category
+              <select id="eventCategory" required>
+                <option value="">Select category</option>
+                <option value="Seminar / Academic Talk">Seminar / Academic Talk</option>
+                <option value="Training">Training</option>
+                <option value="Club Programs">Club Programs</option>
+                <option value="Sport Events">Sport Events</option>
+                <option value="Cultural Events">Cultural Events</option>
+                <option value="Hackathons">Hackathons</option>
+              </select>
+            </label>
+            <label class="full-width">Image URL
+              <input id="eventImageUrl" type="url">
+            </label>
+            <label class="full-width">Description
+              <textarea id="eventDescription" rows="4" required></textarea>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Save Event</button>
+            <button id="cancelEditBtn" class="btn btn-secondary" type="button">Cancel Edit</button>
+          </div>
+          <p id="formMessage" class="message"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>My Events</h2>
+        <div id="organizerEventsGrid" class="events-grid"></div>
+        <div class="section-actions">
+          <button id="seeMoreOrganizer" class="btn btn-secondary" type="button">See More</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Registrations</h2>
+        <div id="registrationsList">
+          <p class="helper-text">Select "View registrations" on any event.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

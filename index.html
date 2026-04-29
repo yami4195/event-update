@@ -3,89 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event Management System</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-    }
-  </style>
+  <title>HU Events | Home</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-page="home">
   <header class="header">
     <nav class="navbar container">
-      <a href="#" class="logo">
-        EventEase
-      </a>
-      <div class="nav-actions">
-        <a class="btn btn-secondary" href="login.html">Login</a>
-        <a class="btn btn-primary" href="signup.html">Signup</a>
+      <div class="nav-left">
+        <a href="index.html" class="logo">HU Events</a>
       </div>
+      <div class="nav-center">
+        <div class="main-links">
+          <a class="active" href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="about.html">About Us</a>
+        </div>
+      </div>
+      <div id="navAuthArea" class="nav-actions"></div>
     </nav>
   </header>
 
   <main>
     <section class="hero">
       <div class="container hero-content">
-        <h1>Discover Events</h1>
-        <p>
-          Explore exciting events happening near you and reserve your spot in seconds.
-        </p>
+        <h1>Discover HU Events</h1>
+        <p>Explore campus programs, trainings, seminars, sports, and hackathons created for Hawassa University students.</p>
       </div>
     </section>
 
-    <section class="events-section container" id="events">
-      <h2>Upcoming Events</h2>
-      <div class="events-grid">
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80" alt="Crowd enjoying a live music concert">
-          <div class="event-card-content">
-            <h3>Summer Music Fest</h3>
-            <p class="meta"><strong>Date:</strong> June 15, 2026</p>
-            <p class="meta"><strong>Location:</strong> Central Park Arena</p>
-            <button class="btn btn-primary view-details" type="button">View Details</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="People networking at a business conference">
-          <div class="event-card-content">
-            <h3>Startup Networking Night</h3>
-            <p class="meta"><strong>Date:</strong> July 03, 2026</p>
-            <p class="meta"><strong>Location:</strong> Meridian Convention Hall</p>
-            <button class="btn btn-primary view-details" type="button">View Details</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80" alt="Outdoor food market with colorful stalls">
-          <div class="event-card-content">
-            <h3>International Food Carnival</h3>
-            <p class="meta"><strong>Date:</strong> August 10, 2026</p>
-            <p class="meta"><strong>Location:</strong> Riverside Square</p>
-            <button class="btn btn-primary view-details" type="button">View Details</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=900&q=80" alt="Audience watching a keynote presentation on stage">
-          <div class="event-card-content">
-            <h3>Tech Future Summit</h3>
-            <p class="meta"><strong>Date:</strong> September 22, 2026</p>
-            <p class="meta"><strong>Location:</strong> Skyline Expo Center</p>
-            <button class="btn btn-primary view-details" type="button">View Details</button>
-          </div>
-        </article>
+    <section class="section container">
+      <h2>Featured Events</h2>
+      <div id="featuredEventsGrid" class="events-grid"></div>
+      <div class="section-actions">
+        <button id="seeMoreHome" class="btn btn-primary" type="button">See More</button>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="container">
-      <p>&copy; 2026 EventEase. All rights reserved.</p>
+      <p>&copy; 2026 HU Events - Hawassa University</p>
     </div>
   </footer>
-
   <script src="script.js"></script>
 </body>
 </html>

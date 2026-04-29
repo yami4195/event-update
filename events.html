@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HU Events | Events</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="events">
+  <header class="header">
+    <nav class="navbar container">
+      <div class="nav-left">
+        <a href="index.html" class="logo">HU Events</a>
+      </div>
+      <div class="nav-center">
+        <div class="main-links">
+          <a href="index.html">Home</a>
+          <a class="active" href="events.html">Events</a>
+          <a href="about.html">About Us</a>
+        </div>
+      </div>
+      <div id="navAuthArea" class="nav-actions"></div>
+    </nav>
+  </header>
+
+  <main class="section">
+    <div class="container">
+      <h1>All Events</h1>
+      <p class="helper-text">Filter by category or date to quickly find relevant events.</p>
+
+      <div class="filters">
+        <select id="categoryFilter">
+          <option value="all">All Categories</option>
+          <option value="Seminar / Academic Talk">Seminar / Academic Talk</option>
+          <option value="Training">Training</option>
+          <option value="Club Programs">Club Programs</option>
+          <option value="Sport Events">Sport Events</option>
+          <option value="Cultural Events">Cultural Events</option>
+          <option value="Hackathons">Hackathons</option>
+        </select>
+        <select id="dateFilter">
+          <option value="all">All Dates</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="past">Past</option>
+        </select>
+      </div>
+
+      <div id="eventsGrid" class="events-grid"></div>
+      <div class="section-actions">
+        <button id="seeMoreEvents" class="btn btn-secondary" type="button">See More</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2026 HU Events - Hawassa University</p>
+    </div>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>

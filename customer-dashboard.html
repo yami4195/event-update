@@ -3,134 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Dashboard - Event Management System</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>HU Events | Student Dashboard</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .user-chip {
-      padding: 0.62rem 0.9rem;
-      border-radius: 0.65rem;
-      font-weight: 600;
-      font-size: 0.92rem;
-      color: #dde5ff;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-    }
-
-    .dashboard-note {
-      margin-top: 0.7rem;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    @media (max-width: 560px) {
-      .user-chip {
-        width: 100%;
-        text-align: center;
-      }
-    }
-  </style>
 </head>
-<body>
+<body data-page="customer-dashboard">
   <header class="header">
     <nav class="navbar container">
-      <a href="index.html" class="logo" aria-label="Event Management System home">
-        EventEase
-      </a>
-      <div class="nav-actions">
-        <span id="usernameDisplay" class="user-chip">Customer</span>
-        <button id="logoutBtn" class="btn btn-secondary" type="button">Logout</button>
+      <div class="nav-left">
+        <a href="index.html" class="logo">HU Events</a>
       </div>
+      <div class="nav-center">
+        <div class="main-links">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="about.html">About Us</a>
+        </div>
+      </div>
+      <div id="navAuthArea" class="nav-actions"></div>
     </nav>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-content">
-        <h1 id="welcomeTitle">Welcome, Customer</h1>
-        <p class="dashboard-note">Here are some events you can book right now.</p>
-      </div>
-    </section>
+  <main class="section">
+    <div class="container dashboard-grid">
+      <section>
+        <h2>Available Events</h2>
+        <div id="availableEventsGrid" class="events-grid"></div>
+        <div class="section-actions">
+          <button id="seeMoreAvailable" class="btn btn-secondary" type="button">See More</button>
+        </div>
+      </section>
 
-    <section class="events-section container" id="events">
-      <h2>Recommended Events</h2>
-      <div class="events-grid">
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80" alt="Crowd enjoying a live music concert">
-          <div class="event-card-content">
-            <h3>Summer Music Fest</h3>
-            <p class="meta"><strong>Date:</strong> June 15, 2026</p>
-            <p class="meta"><strong>Location:</strong> Central Park Arena</p>
-            <button class="btn btn-primary book-btn" type="button">Book Now</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80" alt="People networking at a business conference">
-          <div class="event-card-content">
-            <h3>Startup Networking Night</h3>
-            <p class="meta"><strong>Date:</strong> July 03, 2026</p>
-            <p class="meta"><strong>Location:</strong> Meridian Convention Hall</p>
-            <button class="btn btn-primary book-btn" type="button">Book Now</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80" alt="Outdoor food market with colorful stalls">
-          <div class="event-card-content">
-            <h3>International Food Carnival</h3>
-            <p class="meta"><strong>Date:</strong> August 10, 2026</p>
-            <p class="meta"><strong>Location:</strong> Riverside Square</p>
-            <button class="btn btn-primary book-btn" type="button">Book Now</button>
-          </div>
-        </article>
-
-        <article class="event-card">
-          <img src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=900&q=80" alt="Audience watching a keynote presentation on stage">
-          <div class="event-card-content">
-            <h3>Tech Future Summit</h3>
-            <p class="meta"><strong>Date:</strong> September 22, 2026</p>
-            <p class="meta"><strong>Location:</strong> Skyline Expo Center</p>
-            <button class="btn btn-primary book-btn" type="button">Book Now</button>
-          </div>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container">
-      <p>&copy; 2026 EventEase. All rights reserved.</p>
+      <section>
+        <h2>Registered Events</h2>
+        <div id="registeredEventsGrid" class="events-grid"></div>
+        <div class="section-actions">
+          <button id="seeMoreRegistered" class="btn btn-secondary" type="button">See More</button>
+        </div>
+      </section>
     </div>
-  </footer>
-
-  <script>
-    const currentUser = JSON.parse(localStorage.getItem("emsCurrentUser") || "null");
-    const welcomeTitle = document.getElementById("welcomeTitle");
-    const usernameDisplay = document.getElementById("usernameDisplay");
-    const logoutBtn = document.getElementById("logoutBtn");
-
-    if (!currentUser) {
-      window.location.href = "login.html";
-    } else {
-      const name = currentUser.name || "Customer";
-      welcomeTitle.textContent = `Welcome, ${name}`;
-      usernameDisplay.textContent = name;
-    }
-
-    logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("emsCurrentUser");
-      window.location.href = "index.html";
-    });
-
-    document.querySelectorAll(".book-btn").forEach((button) => {
-      button.addEventListener("click", () => {
-        const eventTitle = button.closest(".event-card")?.querySelector("h3")?.textContent || "this event";
-        alert(`Booked successfully for ${eventTitle}.`);
-      });
-    });
-  </script>
+  </main>
+  <script src="script.js"></script>
 </body>
 </html>
