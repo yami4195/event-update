@@ -7,90 +7,111 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-page="organizer-dashboard">
-  <header class="header">
-    <nav class="navbar container">
-      <div class="nav-left">
+  <div class="admin-layout">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
         <a href="index.html" class="logo">HU Events</a>
+        <button id="closeSidebarBtn" class="mobile-only btn btn-small btn-secondary">✖</button>
       </div>
-      <div class="nav-center">
-        <div class="main-links">
-          <a href="index.html">Home</a>
-          <a href="events.html">Events</a>
-          <a href="about.html">About Us</a>
-        </div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-link active" data-tab="section-dashboard">📊 Dashboard</button>
+        <button class="sidebar-link" data-tab="section-create-event">➕ Create Event</button>
+        <button class="sidebar-link" data-tab="section-my-events">📅 My Events</button>
+        <button class="sidebar-link" data-tab="section-registrations">👥 Registrations</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="sidebarLogoutBtn" class="sidebar-logout">🚪 Logout</button>
       </div>
-      <div id="navAuthArea" class="nav-actions"></div>
-    </nav>
-  </header>
+    </aside>
 
-  <main class="section">
-    <div class="container dashboard-grid">
-      <section class="stats-grid">
-        <article class="card"><h3>Total Events</h3><p id="statTotalEvents">0</p></article>
-        <article class="card"><h3>Total Registrations</h3><p id="statTotalRegistrations">0</p></article>
-        <article class="card"><h3>Upcoming</h3><p id="statUpcomingEvents">0</p></article>
-        <article class="card"><h3>Past</h3><p id="statPastEvents">0</p></article>
-      </section>
-
-      <section class="card">
-        <h2>Create / Edit Event</h2>
-        <form id="eventForm">
-          <input id="editEventId" type="hidden">
-          <div class="form-grid">
-            <label>Title
-              <input id="eventTitle" type="text" required>
-            </label>
-            <label>Date
-              <input id="eventDate" type="date" required>
-            </label>
-            <label>Time
-              <input id="eventTime" type="time" required>
-            </label>
-            <label>Location
-              <input id="eventLocation" type="text" required>
-            </label>
-            <label>Category
-              <select id="eventCategory" required>
-                <option value="">Select category</option>
-                <option value="Seminar / Academic Talk">Seminar / Academic Talk</option>
-                <option value="Training">Training</option>
-                <option value="Club Programs">Club Programs</option>
-                <option value="Sport Events">Sport Events</option>
-                <option value="Cultural Events">Cultural Events</option>
-                <option value="Hackathons">Hackathons</option>
-              </select>
-            </label>
-            <label class="full-width">Image URL
-              <input id="eventImageUrl" type="url">
-            </label>
-            <label class="full-width">Description
-              <textarea id="eventDescription" rows="4" required></textarea>
-            </label>
-          </div>
-          <div class="form-actions">
-            <button class="btn btn-primary" type="submit">Save Event</button>
-            <button id="cancelEditBtn" class="btn btn-secondary" type="button">Cancel Edit</button>
-          </div>
-          <p id="formMessage" class="message"></p>
-        </form>
-      </section>
-
-      <section>
-        <h2>My Events</h2>
-        <div id="organizerEventsGrid" class="events-grid"></div>
-        <div class="section-actions">
-          <button id="seeMoreOrganizer" class="btn btn-secondary" type="button">See More</button>
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <button id="mobileMenuBtn" class="mobile-menu-btn mobile-only">☰ Menu</button>
+          <span class="page-title" id="topbarTitle">Dashboard</span>
         </div>
-      </section>
-
-      <section class="card">
-        <h2>Registrations</h2>
-        <div id="registrationsList">
-          <p class="helper-text">Select "View registrations" on any event.</p>
+        <div class="topbar-right">
+          <span class="user-chip" id="navUserName"></span>
         </div>
-      </section>
-    </div>
-  </main>
+      </header>
+      
+      <div class="admin-content container">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="section-dashboard" class="tab-pane active">
+          <h2 class="section-title">Overview</h2>
+          <div class="stats-grid">
+            <article class="card"><h3>Total Events Created</h3><p id="statTotalEvents">0</p></article>
+            <article class="card"><h3>Upcoming Events</h3><p id="statUpcomingEvents">0</p></article>
+            <article class="card"><h3>Total Registrations</h3><p id="statTotalRegistrations">0</p></article>
+          </div>
+        </section>
+
+        <!-- CREATE EVENT TAB -->
+        <section id="section-create-event" class="tab-pane">
+          <div class="card form-card">
+            <h2 class="section-title" id="formTitle">Create Event</h2>
+            <form id="eventForm">
+              <input id="editEventId" type="hidden">
+              <div class="form-grid">
+                <label>Event Title
+                  <input id="eventTitle" type="text" required>
+                </label>
+                <label>Date
+                  <input id="eventDate" type="date" required>
+                </label>
+                <label>Time
+                  <input id="eventTime" type="time" required>
+                </label>
+                <label>Location
+                  <input id="eventLocation" type="text" required>
+                </label>
+                <label>Category
+                  <select id="eventCategory" required>
+                    <option value="">Select category</option>
+                    <option value="Seminar / Academic Talk">Seminar / Academic Talk</option>
+                    <option value="Training">Training</option>
+                    <option value="Club Programs">Club Programs</option>
+                    <option value="Sport Events">Sport Events</option>
+                    <option value="Cultural Events">Cultural Events</option>
+                    <option value="Hackathons">Hackathons</option>
+                  </select>
+                </label>
+                <label class="full-width">Image URL
+                  <input id="eventImageUrl" type="url" placeholder="Optional image link">
+                </label>
+                <label class="full-width">Description
+                  <textarea id="eventDescription" rows="4" required></textarea>
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Save Event</button>
+                <button id="cancelEditBtn" class="btn btn-secondary" type="button" style="display:none;">Cancel Edit</button>
+              </div>
+              <p id="formMessage" class="message"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- MY EVENTS TAB -->
+        <section id="section-my-events" class="tab-pane">
+          <h2 class="section-title">My Events</h2>
+          <div id="organizerEventsGrid" class="events-grid"></div>
+        </section>
+
+        <!-- REGISTRATIONS TAB -->
+        <section id="section-registrations" class="tab-pane">
+          <div class="card registrations-card">
+            <h2 class="section-title">Registrations <span id="registrationEventTitle" class="registration-title-sub"></span></h2>
+            <div id="registrationsList">
+              <p class="helper-text">Select "View registrations" on any event.</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

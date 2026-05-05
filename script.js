@@ -223,7 +223,11 @@
       users.push(user);
       localStorage.setItem(USERS_KEY, JSON.stringify(users));
       setCurrentUser(user);
-      window.location.href = "events.html";
+      if (user.role === "Organizer") {
+        window.location.href = "organizer-dashboard.html";
+      } else {
+        window.location.href = "events.html";
+      }
     });
   }
 
@@ -252,7 +256,11 @@
         return;
       }
       setCurrentUser(user);
-      window.location.href = "events.html";
+      if (user.role === "Organizer") {
+        window.location.href = "organizer-dashboard.html";
+      } else {
+        window.location.href = "events.html";
+      }
     });
   }
 
@@ -295,21 +303,78 @@
   function setupOrganizerDashboard() {
     const user = getCurrentUser();
     if (!user) return;
+    
     const form = document.getElementById("eventForm");
     const list = document.getElementById("organizerEventsGrid");
     const regs = document.getElementById("registrationsList");
     const statsTotal = document.getElementById("statTotalEvents");
     const statsReg = document.getElementById("statTotalRegistrations");
     const statsUpcoming = document.getElementById("statUpcomingEvents");
-    const statsPast = document.getElementById("statPastEvents");
-    const moreBtn = document.getElementById("seeMoreOrganizer");
     const formMessage = document.getElementById("formMessage");
     const editId = document.getElementById("editEventId");
     const cancelEditBtn = document.getElementById("cancelEditBtn");
-    if (!form || !list || !regs || !statsTotal || !statsReg || !statsUpcoming || !statsPast || !moreBtn || !formMessage || !editId || !cancelEditBtn) return;
+    
+    // We only proceed if we find essential organizer dashboard elements
+    if (!form || !list) return;
 
-    let limit = 4;
-    cancelEditBtn.style.display = "none";
+    let limit = 100; // Show all for now for simplicity, or we keep pagination logic
+
+    // --- Layout & Session setup ---
+    const navUserName = document.getElementById("navUserName");
+    if (navUserName) navUserName.textContent = user.name;
+
+    const sidebarLogoutBtn = document.getElementById("sidebarLogoutBtn");
+    if (sidebarLogoutBtn) {
+      sidebarLogoutBtn.addEventListener("click", function () {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        window.location.href = "login.html";
+      });
+    }
+
+    // --- Sidebar & Tab logic ---
+    const adminSidebar = document.getElementById("adminSidebar");
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+    
+    if (mobileMenuBtn && adminSidebar) {
+      mobileMenuBtn.addEventListener("click", function() {
+        adminSidebar.classList.add("open");
+      });
+    }
+    if (closeSidebarBtn && adminSidebar) {
+      closeSidebarBtn.addEventListener("click", function() {
+        adminSidebar.classList.remove("open");
+      });
+    }
+
+    const sidebarLinks = document.querySelectorAll(".sidebar-link");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    const topbarTitle = document.getElementById("topbarTitle");
+
+    function switchTab(tabId, titleText) {
+      tabPanes.forEach(function(pane) { pane.classList.remove("active"); });
+      sidebarLinks.forEach(function(link) { 
+        link.classList.remove("active"); 
+        if(link.dataset.tab === tabId) link.classList.add("active");
+      });
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add("active");
+      if (topbarTitle && titleText) topbarTitle.textContent = titleText;
+      if (adminSidebar) adminSidebar.classList.remove("open");
+    }
+
+    sidebarLinks.forEach(function(link) {
+      link.addEventListener("click", function(e) {
+        e.preventDefault();
+        const tabId = this.dataset.tab;
+        const rawText = this.textContent.trim();
+        // Extract basic title string by omitting the first char emoji if desired
+        const titleText = rawText.replace(/^[\u2700-\u27BF\u1F000-\u1F9FF\u2B50\u200D\u2600-\u26FF\s]+/, "");
+        switchTab(tabId, titleText || "Dashboard");
+      });
+    });
+
+    if (cancelEditBtn) cancelEditBtn.style.display = "none";
 
     function byOwner(events) {
       return events.filter(function (item) { return item.organizerEmail === user.email; });
@@ -318,10 +383,9 @@
     function updateStats() {
       const events = byOwner(getEvents());
       const registrations = events.reduce(function (sum, item) { return sum + (item.registrations || []).length; }, 0);
-      statsTotal.textContent = String(events.length);
-      statsReg.textContent = String(registrations);
-      statsUpcoming.textContent = String(events.filter(isUpcoming).length);
-      statsPast.textContent = String(events.filter(function (item) { return !isUpcoming(item); }).length);
+      if(statsTotal) statsTotal.textContent = String(events.length);
+      if(statsReg) statsReg.textContent = String(registrations);
+      if(statsUpcoming) statsUpcoming.textContent = String(events.filter(isUpcoming).length);
     }
 
     function draw() {
@@ -329,15 +393,16 @@
       list.innerHTML = ownEvents.slice(0, limit).map(function (item) {
         return '<article class="event-card"><img src="' + (item.imageUrl || DEFAULT_IMAGE) + '" alt="' + item.title + '"><div class="event-card-content"><h3>' + item.title + '</h3><p class="meta"><strong>Date:</strong> ' + item.date + " " + item.time + '</p><p class="meta"><strong>Category:</strong> ' + item.category + '</p><p class="meta"><strong>Location:</strong> ' + item.location + '</p><div class="form-actions"><button class="btn btn-secondary btn-small" type="button" data-action="view" data-id="' + item.id + '">View registrations</button><button class="btn btn-primary btn-small" type="button" data-action="edit" data-id="' + item.id + '">Edit</button><button class="btn btn-danger btn-small" type="button" data-action="delete" data-id="' + item.id + '">Delete</button></div></div></article>';
       }).join("");
-      moreBtn.style.display = ownEvents.length > limit ? "inline-flex" : "none";
       updateStats();
     }
 
     function clearForm() {
       form.reset();
       editId.value = "";
-      formMessage.textContent = "";
-      cancelEditBtn.style.display = "none";
+      if(formMessage) formMessage.textContent = "";
+      if (cancelEditBtn) cancelEditBtn.style.display = "none";
+      const fTitle = document.getElementById("formTitle");
+      if(fTitle) fTitle.textContent = "Create Event";
     }
 
     form.addEventListener("submit", function (event) {
@@ -349,8 +414,9 @@
       const location = document.getElementById("eventLocation").value.trim();
       const category = document.getElementById("eventCategory").value;
       const imageUrl = document.getElementById("eventImageUrl").value.trim();
+      
       if (!title || !description || !date || !time || !location || !category) {
-        formMessage.textContent = "Please fill all required fields.";
+        if(formMessage) formMessage.textContent = "Please fill all required fields.";
         return;
       }
       const allEvents = getEvents();
@@ -365,6 +431,10 @@
           current.category = category;
           current.imageUrl = imageUrl;
         }
+        if(formMessage) {
+            formMessage.textContent = "Event updated successfully!";
+            formMessage.style.color = "var(--primary-dark)";
+        }
       } else {
         allEvents.push({
           id: "ev-" + Date.now(),
@@ -378,10 +448,15 @@
           organizerEmail: user.email,
           registrations: []
         });
+        if(formMessage) {
+            formMessage.textContent = "Event created successfully!";
+            formMessage.style.color = "var(--primary-dark)";
+        }
       }
       saveEvents(allEvents);
       clearForm();
       draw();
+      setTimeout(function(){ if(formMessage) formMessage.textContent = ""; }, 3000);
     });
 
     list.addEventListener("click", function (event) {
@@ -392,12 +467,17 @@
       const allEvents = getEvents();
       const target = allEvents.find(function (item) { return item.id === id; });
       if (!target) return;
+      
       if (action === "view") {
         const entries = (target.registrations || []).map(function (r) {
           return "<li>" + r.name + " (" + r.email + ") - " + r.registrationDate + "</li>";
         }).join("");
-        regs.innerHTML = entries ? "<ul>" + entries + "</ul>" : "<p class='helper-text'>No registrations yet.</p>";
+        if(regs) regs.innerHTML = entries ? "<ul style='margin-left:1.5rem;'>" + entries + "</ul>" : "<p class='helper-text'>No registrations yet.</p>";
+        const regTitle = document.getElementById("registrationEventTitle");
+        if(regTitle) regTitle.textContent = "for " + target.title;
+        switchTab("section-registrations", "Registrations");
       }
+      
       if (action === "edit") {
         editId.value = target.id;
         document.getElementById("eventTitle").value = target.title;
@@ -407,8 +487,14 @@
         document.getElementById("eventLocation").value = target.location;
         document.getElementById("eventCategory").value = target.category;
         document.getElementById("eventImageUrl").value = target.imageUrl || "";
-        cancelEditBtn.style.display = "inline-flex";
+        
+        if (cancelEditBtn) cancelEditBtn.style.display = "inline-flex";
+        const fTitle = document.getElementById("formTitle");
+        if(fTitle) fTitle.textContent = "Edit Event";
+        
+        switchTab("section-create-event", "Edit Event");
       }
+      
       if (action === "delete") {
         if (!window.confirm("Delete this event?")) return;
         saveEvents(allEvents.filter(function (item) { return item.id !== id; }));
@@ -416,11 +502,7 @@
       }
     });
 
-    cancelEditBtn.addEventListener("click", clearForm);
-    moreBtn.addEventListener("click", function () {
-      limit += 4;
-      draw();
-    });
+    if (cancelEditBtn) cancelEditBtn.addEventListener("click", clearForm);
 
     draw();
   }
