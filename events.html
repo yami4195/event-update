@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HU Events | Events</title>
+  <title>HU Events | All Events</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="events">
   <header class="header">
     <nav class="navbar container">
       <div class="nav-left">
-        <a href="index.html" class="logo">HU Events</a>
+        <a href="index.html" class="logo"><i class="ph ph-graduation-cap"></i> HU Events</a>
       </div>
       <div class="nav-center">
         <div class="main-links">
@@ -25,8 +26,8 @@
 
   <main class="section">
     <div class="container">
-      <h1>All Events</h1>
-      <p class="helper-text">Filter by category or date to quickly find relevant events.</p>
+      <h1 class="section-title" style="text-align: left; margin-bottom: 0.5rem;">All Events</h1>
+      <p class="helper-text" style="margin-bottom: 2rem;">Filter by category or date to quickly find relevant events.</p>
 
       <div class="filters">
         <select id="categoryFilter">
@@ -47,7 +48,7 @@
 
       <div id="eventsGrid" class="events-grid"></div>
       <div class="section-actions">
-        <button id="seeMoreEvents" class="btn btn-secondary" type="button">See More</button>
+        <button id="seeMoreEvents" class="btn btn-secondary" type="button">Load More <i class="ph ph-caret-down"></i></button>
       </div>
     </div>
   </main>

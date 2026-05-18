@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HU Events | Signup</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="signup">
   <header class="header">
     <nav class="navbar container">
       <div class="nav-left">
-        <a href="index.html" class="logo">HU Events</a>
+        <a href="index.html" class="logo"><i class="ph ph-graduation-cap"></i> HU Events</a>
       </div>
       <div class="nav-center">
         <div class="main-links">
@@ -23,31 +24,32 @@
     </nav>
   </header>
 
-  <main class="auth-layout container">
+  <main class="auth-layout">
     <section class="auth-card">
-      <h1>Signup</h1>
-      <p class="helper-text">Create your HU Events account as Student or Organizer.</p>
+      <i class="ph ph-user-plus" style="font-size: 3rem; color: var(--color-primary); margin-bottom: 1rem;"></i>
+      <h1>Create Account</h1>
+      <p class="helper-text">Join the Hawassa University events community. New organizer accounts require admin approval.</p>
       <form id="signupForm" novalidate>
         <label for="signupName">Full Name
-          <input id="signupName" type="text" required>
+          <input id="signupName" type="text" placeholder="Abebe Kebede" required>
         </label>
-        <label for="signupEmail">Email
-          <input id="signupEmail" type="email" required>
+        <label for="signupEmail">Email Address
+          <input id="signupEmail" type="email" placeholder="student@hu.edu.et" required>
         </label>
         <label for="signupPassword">Password
-          <input id="signupPassword" type="password" required>
+          <input id="signupPassword" type="password" placeholder="••••••••" required>
         </label>
-        <label for="signupRole">Role
+        <label for="signupRole">I am a...
           <select id="signupRole" required>
             <option value="">Select role</option>
-            <option value="Student">Student</option>
-            <option value="Organizer">Organizer</option>
+            <option value="student">Student (Attendee)</option>
+            <option value="organizer">Organizer (Creator)</option>
           </select>
         </label>
-        <button class="btn btn-primary" type="submit">Create Account</button>
+        <button class="btn btn-primary" type="submit"><i class="ph ph-user-plus"></i> Create Account</button>
       </form>
       <p id="signupMessage" class="message"></p>
-      <p class="helper-text">Already registered? <a href="login.html">Login</a></p>
+      <p class="helper-text" style="margin-top: 1.5rem;">Already registered? <a href="login.html">Sign in</a></p>
     </section>
   </main>
   <script src="script.js"></script>

@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HU Events | Home</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="home">
   <header class="header">
     <nav class="navbar container">
       <div class="nav-left">
-        <a href="index.html" class="logo">HU Events</a>
+        <a href="index.html" class="logo"><i class="ph ph-graduation-cap"></i> HU Events</a>
       </div>
       <div class="nav-center">
         <div class="main-links">
@@ -28,14 +29,17 @@
       <div class="container hero-content">
         <h1>Discover HU Events</h1>
         <p>Explore campus programs, trainings, seminars, sports, and hackathons created for Hawassa University students.</p>
+        <div style="margin-top: 2rem;">
+          <a href="events.html" class="btn btn-secondary" style="background: white; color: var(--color-primary-dark);"><i class="ph ph-magnifying-glass"></i> Explore Events</a>
+        </div>
       </div>
     </section>
 
     <section class="section container">
-      <h2>Featured Events</h2>
+      <h2 class="section-title">Featured Events</h2>
       <div id="featuredEventsGrid" class="events-grid"></div>
       <div class="section-actions">
-        <button id="seeMoreHome" class="btn btn-primary" type="button">See More</button>
+        <button id="seeMoreHome" class="btn btn-primary" type="button">See All Events <i class="ph ph-arrow-right"></i></button>
       </div>
     </section>
   </main>

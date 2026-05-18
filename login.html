@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HU Events | Login</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="login">
   <header class="header">
     <nav class="navbar container">
       <div class="nav-left">
-        <a href="index.html" class="logo">HU Events</a>
+        <a href="index.html" class="logo"><i class="ph ph-graduation-cap"></i> HU Events</a>
       </div>
       <div class="nav-center">
         <div class="main-links">
@@ -23,21 +24,23 @@
     </nav>
   </header>
 
-  <main class="auth-layout container">
+  <main class="auth-layout">
     <section class="auth-card">
-      <h1>Login</h1>
-      <p class="helper-text">Sign in to access HU Events pages and dashboards.</p>
+      <i class="ph ph-sign-in" style="font-size: 3rem; color: var(--color-primary); margin-bottom: 1rem;"></i>
+      <h1>Welcome Back</h1>
+      <p class="helper-text">Sign in to access your HU Events dashboard.</p>
       <form id="loginForm" novalidate>
-        <label for="loginEmail">Email
-          <input id="loginEmail" type="email" required>
+        <label for="loginEmail">Email Address
+          <input id="loginEmail" type="email" placeholder="student@hu.edu.et" required>
         </label>
         <label for="loginPassword">Password
-          <input id="loginPassword" type="password" required>
+          <input id="loginPassword" type="password" placeholder="••••••••" required>
         </label>
-        <button class="btn btn-primary" type="submit">Login</button>
+        <button class="btn btn-primary" type="submit"><i class="ph ph-sign-in"></i> Login</button>
       </form>
       <p id="loginMessage" class="message"></p>
-      <p class="helper-text">No account yet? <a href="signup.html">Signup</a></p>
+      <p class="helper-text" style="margin-top: 1.5rem;">Don't have an account? <a href="signup.html">Create one</a></p>
+      <p class="helper-text" style="margin-top: 0.75rem;">Demo (after seed.sql): <code>student@hu.edu.et</code>, <code>organizer@hu.edu.et</code>, <code>admin@hu.edu.et</code> — password <code>password123</code></p>
     </section>
   </main>
   <script src="script.js"></script>

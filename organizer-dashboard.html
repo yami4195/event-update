@@ -5,33 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HU Events | Organizer Dashboard</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="organizer-dashboard">
   <div class="admin-layout">
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-header">
-        <a href="index.html" class="logo">HU Events</a>
-        <button id="closeSidebarBtn" class="mobile-only btn btn-small btn-secondary">✖</button>
+        <a href="index.html" class="logo" style="color: white;"><i class="ph ph-graduation-cap"></i> HU Events</a>
+        <button id="closeSidebarBtn" class="mobile-only btn btn-small btn-secondary"><i class="ph ph-x"></i></button>
       </div>
       <nav class="sidebar-nav">
-        <button class="sidebar-link active" data-tab="section-dashboard">📊 Dashboard</button>
-        <button class="sidebar-link" data-tab="section-create-event">➕ Create Event</button>
-        <button class="sidebar-link" data-tab="section-my-events">📅 My Events</button>
-        <button class="sidebar-link" data-tab="section-registrations">👥 Registrations</button>
+        <button class="sidebar-link active" data-tab="section-dashboard"><i class="ph ph-chart-bar"></i> Dashboard</button>
+        <button class="sidebar-link" data-tab="section-create-event"><i class="ph ph-plus-circle"></i> Create Event</button>
+        <button class="sidebar-link" data-tab="section-my-events"><i class="ph ph-calendar-blank"></i> My Events</button>
+        <button class="sidebar-link" data-tab="section-registrations"><i class="ph ph-users"></i> Registrations</button>
       </nav>
       <div class="sidebar-footer">
-        <button id="sidebarLogoutBtn" class="sidebar-logout">🚪 Logout</button>
+        <button id="sidebarLogoutBtn" class="sidebar-logout"><i class="ph ph-sign-out"></i> Logout</button>
       </div>
     </aside>
 
     <main class="admin-main">
       <header class="admin-topbar">
         <div class="topbar-left">
-          <button id="mobileMenuBtn" class="mobile-menu-btn mobile-only">☰ Menu</button>
+          <button id="mobileMenuBtn" class="mobile-menu-btn mobile-only"><i class="ph ph-list"></i></button>
           <span class="page-title" id="topbarTitle">Dashboard</span>
         </div>
         <div class="topbar-right">
-          <span class="user-chip" id="navUserName"></span>
+          <span class="user-chip"><i class="ph ph-user-circle"></i> <span id="navUserName"></span></span>
         </div>
       </header>
       
@@ -39,32 +40,32 @@
         
         <!-- DASHBOARD TAB -->
         <section id="section-dashboard" class="tab-pane active">
-          <h2 class="section-title">Overview</h2>
+          <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Overview</h2>
           <div class="stats-grid">
-            <article class="card"><h3>Total Events Created</h3><p id="statTotalEvents">0</p></article>
-            <article class="card"><h3>Upcoming Events</h3><p id="statUpcomingEvents">0</p></article>
-            <article class="card"><h3>Total Registrations</h3><p id="statTotalRegistrations">0</p></article>
+            <article class="card">
+              <h3><i class="ph ph-files"></i> Total Events Created</h3>
+              <p id="statTotalEvents">0</p>
+            </article>
+            <article class="card">
+              <h3><i class="ph ph-calendar-plus"></i> Upcoming Events</h3>
+              <p id="statUpcomingEvents">0</p>
+            </article>
+            <article class="card">
+              <h3><i class="ph ph-users-three"></i> Total Registrations</h3>
+              <p id="statTotalRegistrations">0</p>
+            </article>
           </div>
         </section>
 
         <!-- CREATE EVENT TAB -->
         <section id="section-create-event" class="tab-pane">
           <div class="card form-card">
-            <h2 class="section-title" id="formTitle">Create Event</h2>
-            <form id="eventForm">
+            <h2 class="section-title" id="formTitle" style="text-align: left;">Create Event</h2>
+            <form id="eventForm" enctype="multipart/form-data">
               <input id="editEventId" type="hidden">
               <div class="form-grid">
                 <label>Event Title
-                  <input id="eventTitle" type="text" required>
-                </label>
-                <label>Date
-                  <input id="eventDate" type="date" required>
-                </label>
-                <label>Time
-                  <input id="eventTime" type="time" required>
-                </label>
-                <label>Location
-                  <input id="eventLocation" type="text" required>
+                  <input id="eventTitle" type="text" placeholder="e.g. AI Seminar" required>
                 </label>
                 <label>Category
                   <select id="eventCategory" required>
@@ -77,16 +78,39 @@
                     <option value="Hackathons">Hackathons</option>
                   </select>
                 </label>
-                <label class="full-width">Image URL
+                <label>Date
+                  <input id="eventDate" type="date" required>
+                  <span class="helper-text">Must be today or a future date so students can register.</span>
+                </label>
+                <label>Time
+                  <input id="eventTime" type="time" required>
+                </label>
+                <label>Location
+                  <input id="eventLocation" type="text" placeholder="e.g. Main Hall A" required>
+                </label>
+                <label>Capacity (optional)
+                  <input id="eventCapacity" type="number" min="1" placeholder="Max attendees">
+                </label>
+                <label>Status
+                  <select id="eventStatus" required>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </label>
+                <label>Event Image
+                  <input id="eventImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+                </label>
+                <label>Or Image URL
                   <input id="eventImageUrl" type="url" placeholder="Optional image link">
                 </label>
                 <label class="full-width">Description
-                  <textarea id="eventDescription" rows="4" required></textarea>
+                  <textarea id="eventDescription" rows="4" placeholder="Describe the event..." required></textarea>
                 </label>
               </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit">Save Event</button>
-                <button id="cancelEditBtn" class="btn btn-secondary" type="button" style="display:none;">Cancel Edit</button>
+              <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary" type="submit"><i class="ph ph-floppy-disk"></i> Save Event</button>
+                <button id="cancelEditBtn" class="btn btn-secondary" type="button" style="display:none;"><i class="ph ph-x"></i> Cancel Edit</button>
               </div>
               <p id="formMessage" class="message"></p>
             </form>
@@ -95,14 +119,14 @@
 
         <!-- MY EVENTS TAB -->
         <section id="section-my-events" class="tab-pane">
-          <h2 class="section-title">My Events</h2>
+          <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">My Events</h2>
           <div id="organizerEventsGrid" class="events-grid"></div>
         </section>
 
         <!-- REGISTRATIONS TAB -->
         <section id="section-registrations" class="tab-pane">
           <div class="card registrations-card">
-            <h2 class="section-title">Registrations <span id="registrationEventTitle" class="registration-title-sub"></span></h2>
+            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Registrations <span id="registrationEventTitle" class="registration-title-sub"></span></h2>
             <div id="registrationsList">
               <p class="helper-text">Select "View registrations" on any event.</p>
             </div>

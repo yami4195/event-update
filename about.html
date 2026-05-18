@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HU Events | About</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body data-page="about">
   <header class="header">
     <nav class="navbar container">
       <div class="nav-left">
-        <a href="index.html" class="logo">HU Events</a>
+        <a href="index.html" class="logo"><i class="ph ph-graduation-cap"></i> HU Events</a>
       </div>
       <div class="nav-center">
         <div class="main-links">
@@ -24,11 +25,26 @@
   </header>
 
   <main class="section">
-    <div class="container card">
-      <h1>About HU Events</h1>
-      <p class="helper-text">HU Events is a student-focused University Event Management System for Hawassa University.</p>
-      <p>Our goal is to make campus activities easy to discover and join. Students can browse events, filter by category, and register in a few clicks. Organizers can create and manage event details, track registrations, and keep activities active across the university community.</p>
-      <p>HU Events supports seminar and academic talks, training sessions, club programs, sport events, cultural events, and hackathons.</p>
+    <div class="container card" style="max-width: 800px; padding: 4rem; margin: 0 auto; line-height: 1.8; font-size: 1.1rem;">
+      <h1 class="section-title" style="text-align: left; margin-bottom: 0.5rem; color: var(--color-primary-dark); font-size: 3rem;">About HU Events</h1>
+      <p class="helper-text" style="font-size: 1.25rem; margin-bottom: 3rem;">HU Events is a student-focused University Event Management System designed exclusively for Hawassa University.</p>
+      
+      <p style="margin-bottom: 1.5rem;">Our goal is to make campus activities easy to discover and join. Students can browse events, filter by category, and register in a few clicks. Organizers can create and manage event details, track registrations, and keep activities active across the university community.</p>
+      
+      <p>HU Events supports a variety of campus engagements, including:</p>
+      <ul style="margin: 1.5rem 0 2rem 2rem; display: grid; gap: 0.75rem;">
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Seminar and academic talks</li>
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Training sessions</li>
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Club programs</li>
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Sport events</li>
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Cultural events</li>
+        <li><i class="ph-fill ph-check-circle" style="color: var(--color-primary); margin-right: 0.5rem;"></i> Hackathons</li>
+      </ul>
+
+      <div style="margin-top: 3rem; border-top: 1px solid #e2e8f0; padding-top: 2rem;">
+        <h3 style="margin-bottom: 1rem;">Join the Community</h3>
+        <a href="signup.html" class="btn btn-primary"><i class="ph ph-user-plus"></i> Create Your Account</a>
+      </div>
     </div>
   </main>
 
