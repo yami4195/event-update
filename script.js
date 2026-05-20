@@ -33,8 +33,14 @@
     } else if (isOrganizer(user)) {
       window.location.href = "organizer-dashboard.html";
     } else {
-      window.location.href = "events.html";
+      window.location.href = "customer-dashboard.html";
     }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text == null ? "" : String(text);
+    return div.innerHTML;
   }
 
   function statusBadge(status) {
@@ -59,11 +65,8 @@
 
   function loadSession() {
     return apiFetch(API_AUTH + "/me.php").then(function (result) {
-      if (result.ok && result.data.success) {
-        sessionUser = result.data.user || null;
-      } else {
-        sessionUser = null;
-      }
+      const user = result.ok && result.data.success ? result.data.user : null;
+      sessionUser = user && user.id ? user : null;
       return sessionUser;
     }).catch(function () {
       sessionUser = null;
@@ -116,7 +119,7 @@
   function protectRoute() {
     const page = document.body.dataset.page;
     const user = getCurrentUser();
-    if (["events", "customer-dashboard", "organizer-dashboard"].includes(page) && !user) {
+    if (["customer-dashboard", "organizer-dashboard", "admin-dashboard"].includes(page) && !user) {
       window.location.href = "login.html";
       return false;
     }
@@ -146,10 +149,30 @@
     if (user && isStudent(user) && (page === "events" || page === "customer-dashboard" || page === "home")) {
       return "register";
     }
-    if (!user && page === "home") {
-      return "login";
-    }
     return null;
+  }
+
+  function setupMainNav() {
+    const mainLinks = document.querySelector(".main-links");
+    if (!mainLinks) return;
+
+    const page = document.body.dataset.page;
+    const user = getCurrentUser();
+    const links = [
+      { href: "index.html", label: "Home", active: page === "home" },
+      { href: "events.html", label: "Events", active: page === "events" }
+    ];
+
+    if (user && isStudent(user)) {
+      links.push({ href: "customer-dashboard.html", label: "My Dashboard", active: page === "customer-dashboard" });
+    }
+
+    links.push({ href: "about.html", label: "About Us", active: page === "about" });
+
+    mainLinks.innerHTML = links.map(function (link) {
+      const cls = link.active ? ' class="active"' : "";
+      return '<a href="' + link.href + '"' + cls + ">" + link.label + "</a>";
+    }).join("");
   }
 
   function setupNavbar() {
@@ -188,7 +211,174 @@
         actionButton = '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
       }
     }
-    return '<article class="event-card"><img src="' + (eventItem.imageUrl || DEFAULT_IMAGE) + '" alt="' + eventItem.title + '"><div class="event-card-content"><h3>' + eventItem.title + '</h3><p class="meta"><strong>Date:</strong> ' + eventItem.date + " " + eventItem.time + '</p><p class="meta"><strong>Category:</strong> ' + eventItem.category + '</p><p class="meta"><strong>Location:</strong> ' + eventItem.location + "</p>" + capacityLine(eventItem) + actionButton + "</div></article>";
+    const detailsBtn = '<button class="btn btn-secondary btn-small event-view-details" data-event-id="' + eventItem.id + '" type="button">View Details</button>';
+    const actionsHtml = actionButton
+      ? '<div class="event-card-actions">' + detailsBtn + actionButton + "</div>"
+      : '<div class="event-card-actions">' + detailsBtn + "</div>";
+
+    return '<article class="event-card"><img src="' + (eventItem.imageUrl || DEFAULT_IMAGE) + '" alt="' + escapeHtml(eventItem.title) + '"><div class="event-card-content"><h3>' + escapeHtml(eventItem.title) + '</h3><p class="meta"><strong>Date:</strong> ' + eventItem.date + " " + eventItem.time + '</p><p class="meta"><strong>Category:</strong> ' + escapeHtml(eventItem.category) + '</p><p class="meta"><strong>Location:</strong> ' + escapeHtml(eventItem.location) + "</p>" + capacityLine(eventItem) + actionsHtml + "</div></article>";
+  }
+
+  function findEventById(eventId) {
+    const id = Number(eventId);
+    let found = eventsCache.find(function (item) { return Number(item.id) === id; });
+    if (found) return found;
+    found = registeredEvents.find(function (item) { return Number(item.id) === id; });
+    return found || null;
+  }
+
+  function ensureEventDetailModal() {
+    if (document.getElementById("eventDetailModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "eventDetailModal";
+    modal.className = "event-modal";
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="event-modal-backdrop" data-close-modal></div>' +
+      '<div class="event-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">' +
+      '<button type="button" class="event-modal-close" data-close-modal aria-label="Close">&times;</button>' +
+      '<div class="event-modal-body">' +
+      '<img id="eventModalImage" class="event-modal-image" src="" alt="">' +
+      '<div class="event-modal-content">' +
+      '<h2 id="eventModalTitle"></h2>' +
+      '<div id="eventModalMeta" class="event-modal-meta"></div>' +
+      '<div id="eventModalDescription" class="event-modal-description"></div>' +
+      '<div id="eventModalActions" class="event-modal-actions"></div>' +
+      "</div></div></div>";
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener("click", function (e) {
+      if (e.target.closest("[data-close-modal]")) {
+        closeEventDetailModal();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeEventDetailModal();
+    });
+  }
+
+  function buildModalActionHtml(eventItem) {
+    const user = getCurrentUser();
+    if (!user) {
+      if (isUpcoming(eventItem)) {
+        return '<a class="btn btn-primary" href="login.html">Login to Register</a>';
+      }
+      return '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
+    }
+    if (isStudent(user)) {
+      if (isRegistered(eventItem.id)) {
+        if (isUpcoming(eventItem)) {
+          return '<button class="btn btn-danger" id="eventModalUnregisterBtn" type="button">Unregister</button>';
+        }
+        return '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
+      }
+      if (eventItem.isFull) {
+        return '<button class="btn btn-secondary" type="button" disabled>Event Full</button>';
+      }
+      if (isUpcoming(eventItem)) {
+        return '<button class="btn btn-primary" id="eventModalRegisterBtn" type="button">Register for Event</button>';
+      }
+      return '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
+    }
+    return "";
+  }
+
+  function refreshEventViews() {
+    const page = document.body.dataset.page;
+    if (page === "home") renderHome();
+    if (page === "events") {
+      const grid = document.getElementById("eventsGrid");
+      if (grid) grid.dispatchEvent(new CustomEvent("hu-refresh-events"));
+    }
+    if (page === "customer-dashboard") {
+      return loadEvents({ scope: "public", when: "all" }).then(loadRegistered).then(function () {
+        document.dispatchEvent(new CustomEvent("hu-refresh-dashboard"));
+      });
+    }
+    return Promise.resolve();
+  }
+
+  function openEventDetailModal(eventItem) {
+    ensureEventDetailModal();
+    const modal = document.getElementById("eventDetailModal");
+    if (!modal || !eventItem) return;
+
+    document.getElementById("eventModalImage").src = eventItem.imageUrl || DEFAULT_IMAGE;
+    document.getElementById("eventModalImage").alt = eventItem.title;
+    document.getElementById("eventModalTitle").textContent = eventItem.title;
+
+    let metaHtml =
+      '<p><strong>Date:</strong> ' + escapeHtml(eventItem.date) + " " + escapeHtml(eventItem.time) + "</p>" +
+      '<p><strong>Category:</strong> ' + escapeHtml(eventItem.category) + "</p>" +
+      '<p><strong>Location:</strong> ' + escapeHtml(eventItem.location) + "</p>";
+
+    if (eventItem.organizerName) {
+      metaHtml += '<p><strong>Organizer:</strong> ' + escapeHtml(eventItem.organizerName) + "</p>";
+    }
+    if (eventItem.capacity != null) {
+      const count = eventItem.registrationCount || 0;
+      const full = eventItem.isFull ? " (Full)" : "";
+      metaHtml += '<p><strong>Seats:</strong> ' + count + " / " + eventItem.capacity + full + "</p>";
+    }
+
+    document.getElementById("eventModalMeta").innerHTML = metaHtml;
+    document.getElementById("eventModalDescription").textContent = eventItem.description || "No description provided.";
+
+    const actionsEl = document.getElementById("eventModalActions");
+    actionsEl.innerHTML = buildModalActionHtml(eventItem);
+
+    const registerBtn = document.getElementById("eventModalRegisterBtn");
+    if (registerBtn) {
+      registerBtn.addEventListener("click", function () {
+        const user = getCurrentUser();
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+        if (!isStudent(user)) {
+          window.alert("Only students can register for events.");
+          return;
+        }
+        registerForEvent(eventItem.id, function () {
+          closeEventDetailModal();
+          refreshEventViews();
+        });
+      });
+    }
+
+    const unregisterBtn = document.getElementById("eventModalUnregisterBtn");
+    if (unregisterBtn) {
+      unregisterBtn.addEventListener("click", function () {
+        if (!window.confirm("Cancel your registration for this event?")) return;
+        unregisterFromEvent(eventItem.id, function () {
+          closeEventDetailModal();
+          refreshEventViews();
+        });
+      });
+    }
+
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+  }
+
+  function closeEventDetailModal() {
+    const modal = document.getElementById("eventDetailModal");
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+
+  function setupEventDetailDelegation() {
+    document.addEventListener("click", function (e) {
+      const detailsBtn = e.target.closest(".event-view-details[data-event-id]");
+      if (!detailsBtn) return;
+      e.preventDefault();
+      const eventItem = findEventById(detailsBtn.dataset.eventId);
+      if (eventItem) openEventDetailModal(eventItem);
+    });
   }
 
   function registerForEvent(eventId, onDone) {
@@ -230,15 +420,38 @@
     if (!container) return;
     const events = getEvents().filter(isUpcoming).slice(0, 4);
     container.innerHTML = events.map(function (item) { return eventCard(item, cardActionMode()); }).join("");
-    const seeMoreBtn = document.getElementById("seeMoreHome");
-    if (!seeMoreBtn) return;
-    seeMoreBtn.addEventListener("click", function () {
-      if (!getCurrentUser()) {
-        window.location.href = "login.html";
-        return;
+
+    if (!container.dataset.hasListener) {
+      const seeMoreBtn = document.getElementById("seeMoreHome");
+      if (seeMoreBtn) {
+        seeMoreBtn.addEventListener("click", function () {
+          window.location.href = "events.html";
+        });
       }
-      window.location.href = "events.html";
-    });
+
+      container.addEventListener("click", function (event) {
+        const registerBtn = event.target.closest(".event-action[data-event-id]");
+        if (!registerBtn) return;
+        const user = getCurrentUser();
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+        if (!isStudent(user)) {
+          window.alert("Only students can register for events.");
+          return;
+        }
+        const eventId = Number(registerBtn.dataset.eventId);
+        registerBtn.disabled = true;
+        registerForEvent(eventId, renderHome).catch(function () {
+          window.alert("Could not reach the server.");
+        }).finally(function () {
+          registerBtn.disabled = false;
+        });
+      });
+
+      container.dataset.hasListener = "true";
+    }
   }
 
   function renderEventsPage() {
@@ -257,7 +470,7 @@
         when: dateFilter.value
       };
       return loadEvents(params).then(function (all) {
-        grid.innerHTML = all.slice(0, limit).map(function (item) { return eventCard(item, cardActionMode() || "register"); }).join("");
+        grid.innerHTML = all.slice(0, limit).map(function (item) { return eventCard(item, cardActionMode()); }).join("");
         showMoreBtn.style.display = all.length > limit ? "inline-flex" : "none";
       });
     }
@@ -272,6 +485,10 @@
     });
     showMoreBtn.addEventListener("click", function () {
       limit += 4;
+      draw();
+    });
+
+    grid.addEventListener("hu-refresh-events", function () {
       draw();
     });
 
@@ -435,7 +652,7 @@
       if (registerBtn) {
         registerBtn.disabled = true;
         registerForEvent(Number(registerBtn.dataset.eventId), function () {
-          loadEvents({ scope: "public", when: "all" }).then(draw);
+          loadEvents({ scope: "public", when: "all" }).then(loadRegistered).then(draw);
         }).finally(function () { registerBtn.disabled = false; });
         return;
       }
@@ -443,7 +660,7 @@
         if (!window.confirm("Cancel your registration for this event?")) return;
         unregisterBtn.disabled = true;
         unregisterFromEvent(Number(unregisterBtn.dataset.eventId), function () {
-          loadEvents({ scope: "public", when: "all" }).then(draw);
+          loadEvents({ scope: "public", when: "all" }).then(loadRegistered).then(draw);
         }).finally(function () { unregisterBtn.disabled = false; });
       }
     }
@@ -451,7 +668,45 @@
     availableGrid.addEventListener("click", handleGridClick);
     registeredGrid.addEventListener("click", handleGridClick);
 
+    document.addEventListener("hu-refresh-dashboard", draw);
+
     draw();
+  }
+
+  function organizerEventCard(item) {
+    const registrationMeta = item.capacity != null
+      ? '<li><i class="ph ph-armchair"></i><span class="organizer-meta-label">Seats</span><span class="organizer-meta-value">' +
+        (item.registrationCount || 0) + " / " + item.capacity + (item.isFull ? " (Full)" : "") + "</span></li>"
+      : '<li><i class="ph ph-users-three"></i><span class="organizer-meta-label">Registered</span><span class="organizer-meta-value">' +
+        (item.registrationCount || 0) + "</span></li>";
+
+    return (
+      '<article class="event-card organizer-event-card">' +
+      '<div class="organizer-card-media">' +
+      '<img src="' + (item.imageUrl || DEFAULT_IMAGE) + '" alt="' + escapeHtml(item.title) + '">' +
+      statusBadge(item.status) +
+      "</div>" +
+      '<div class="organizer-card-body">' +
+      '<h3 class="organizer-card-title">' + escapeHtml(item.title) + "</h3>" +
+      '<ul class="organizer-card-meta">' +
+      '<li><i class="ph ph-calendar-blank"></i><span class="organizer-meta-label">Date</span><span class="organizer-meta-value">' +
+      escapeHtml(item.date) + " · " + escapeHtml(item.time) + "</span></li>" +
+      '<li><i class="ph ph-tag"></i><span class="organizer-meta-label">Category</span><span class="organizer-meta-value">' +
+      escapeHtml(item.category) + "</span></li>" +
+      '<li><i class="ph ph-map-pin"></i><span class="organizer-meta-label">Location</span><span class="organizer-meta-value">' +
+      escapeHtml(item.location) + "</span></li>" +
+      registrationMeta +
+      "</ul>" +
+      '<div class="organizer-card-actions">' +
+      '<button class="btn btn-secondary btn-block organizer-btn-view" type="button" data-action="view" data-id="' + item.id + '">' +
+      '<i class="ph ph-users"></i> View registrations</button>' +
+      '<div class="organizer-card-actions-split">' +
+      '<button class="btn btn-primary btn-block" type="button" data-action="edit" data-id="' + item.id + '">' +
+      '<i class="ph ph-pencil-simple"></i> Edit</button>' +
+      '<button class="btn btn-danger btn-block" type="button" data-action="delete" data-id="' + item.id + '">' +
+      '<i class="ph ph-trash"></i> Delete</button>' +
+      "</div></div></div></article>"
+    );
   }
 
   function setupOrganizerDashboard() {
@@ -542,9 +797,20 @@
 
     function draw() {
       const ownEvents = getEvents();
-      list.innerHTML = ownEvents.map(function (item) {
-        return '<article class="event-card"><img src="' + (item.imageUrl || DEFAULT_IMAGE) + '" alt="' + item.title + '"><div class="event-card-content"><h3>' + item.title + " " + statusBadge(item.status) + '</h3><p class="meta"><strong>Date:</strong> ' + item.date + " " + item.time + '</p><p class="meta"><strong>Category:</strong> ' + item.category + '</p><p class="meta"><strong>Location:</strong> ' + item.location + "</p>" + capacityLine(item) + '<p class="meta"><strong>Registrations:</strong> ' + (item.registrationCount || 0) + '</p><div class="form-actions"><button class="btn btn-secondary btn-small" type="button" data-action="view" data-id="' + item.id + '">View registrations</button><button class="btn btn-primary btn-small" type="button" data-action="edit" data-id="' + item.id + '">Edit</button><button class="btn btn-danger btn-small" type="button" data-action="delete" data-id="' + item.id + '">Delete</button></div></div></article>';
-      }).join("");
+      const countEl = document.getElementById("organizerEventsCount");
+
+      if (countEl) {
+        const n = ownEvents.length;
+        countEl.textContent = n === 1 ? "1 event" : n + " events";
+      }
+
+      if (!ownEvents.length) {
+        list.innerHTML = '<div class="organizer-empty-state"><i class="ph ph-calendar-plus"></i><p>No events yet</p><span class="helper-text">Create your first event from the Create Event tab.</span></div>';
+        updateStats();
+        return;
+      }
+
+      list.innerHTML = ownEvents.map(organizerEventCard).join("");
       updateStats();
     }
 
@@ -629,7 +895,7 @@
           const entries = (result.data.registrations || []).map(function (r) {
             return "<li>" + r.name + " (" + r.email + ") - " + r.registrationDate + "</li>";
           }).join("");
-          if (regs) regs.innerHTML = entries ? "<ul style='margin-left:1.5rem;'>" + entries + "</ul>" : "<p class='helper-text'>No registrations yet.</p>";
+          if (regs) regs.innerHTML = entries ? "<ul>" + entries + "</ul>" : "<p class='helper-text'>No registrations yet.</p>";
           const regTitle = document.getElementById("registrationEventTitle");
           if (regTitle) regTitle.textContent = "for " + (result.data.eventTitle || target.title);
           switchTab("section-registrations", "Registrations");
@@ -800,13 +1066,32 @@
     Promise.all([loadStats(), loadUsers(), loadAdminEvents()]);
   }
 
+  function redirectIfLoggedInOnAuthPages() {
+    const page = document.body.dataset.page;
+    const user = getCurrentUser();
+    if ((page === "login" || page === "signup") && user) {
+      redirectForRole(user);
+      return false;
+    }
+    return true;
+  }
+
   function boot() {
     if (!protectRoute()) return;
+    if (!redirectIfLoggedInOnAuthPages()) return;
+    setupMainNav();
     setupNavbar();
     setupLogin();
     setupSignup();
 
     const page = document.body.dataset.page;
+    if (page === "about") {
+      const joinSection = document.getElementById("aboutJoinSection");
+      if (joinSection) {
+        joinSection.style.display = getCurrentUser() ? "none" : "block";
+      }
+    }
+
     const loads = [];
 
     if (page === "organizer-dashboard") {
@@ -817,7 +1102,7 @@
       loads.push(loadEvents({ scope: "public", when: "all" }));
     }
 
-    if (getCurrentUser() && isStudent(getCurrentUser()) && (page === "events" || page === "customer-dashboard")) {
+    if (getCurrentUser() && isStudent(getCurrentUser()) && (page === "events" || page === "customer-dashboard" || page === "home")) {
       loads.push(loadRegistered());
     }
 
@@ -830,6 +1115,7 @@
     });
   }
 
+  setupEventDetailDelegation();
   loadSession().then(boot);
 })();
 

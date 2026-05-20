@@ -34,7 +34,7 @@ if ($statusMessage = accountStatusMessage($row['status'])) {
 }
 
 unset($row['password_hash']);
-loginUserSession($row);
+loginUserSession($row, true);
 
 jsonResponse([
     'success' => true,

@@ -61,7 +61,7 @@ if ($status === 'pending') {
     ]);
 }
 
-loginUserSession($row);
+loginUserSession($row, true);
 
 jsonResponse([
     'success' => true,

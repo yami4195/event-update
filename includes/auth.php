@@ -25,12 +25,21 @@ function publicUser(array $row): array
     ];
 }
 
-function loginUserSession(array $row): void
+function loginUserSession(array $row, bool $regenerate = false): void
 {
+    if ($regenerate && session_status() === PHP_SESSION_ACTIVE) {
+        session_regenerate_id(true);
+    }
+
     $_SESSION['user_id']    = (int) $row['id'];
     $_SESSION['user_name']  = $row['name'];
     $_SESSION['user_email'] = $row['email'];
     $_SESSION['user_role']  = $row['role'];
+}
+
+function clearUserSession(): void
+{
+    unset($_SESSION['user_id'], $_SESSION['user_name'], $_SESSION['user_email'], $_SESSION['user_role']);
 }
 
 function logoutUserSession(): void

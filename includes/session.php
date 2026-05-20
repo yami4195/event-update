@@ -1,6 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 if (session_status() === PHP_SESSION_NONE) {
+    $configPath = dirname(__DIR__) . '/config/config.php';
+    if (is_file($configPath)) {
+        require_once $configPath;
+    }
+
+    $cookiePath = defined('BASE_URL') && BASE_URL !== '' ? BASE_URL : '/';
+
+    session_name('hu_events_session');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => $cookiePath,
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    ]);
+
     session_start();
 }
 

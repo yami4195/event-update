@@ -40,7 +40,9 @@
         
         <!-- DASHBOARD TAB -->
         <section id="section-dashboard" class="tab-pane active">
-          <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Overview</h2>
+          <div class="dashboard-section-header">
+            <h2 class="section-title" style="text-align: left;">Overview</h2>
+          </div>
           <div class="stats-grid">
             <article class="card">
               <h3><i class="ph ph-files"></i> Total Events Created</h3>
@@ -119,8 +121,11 @@
 
         <!-- MY EVENTS TAB -->
         <section id="section-my-events" class="tab-pane">
-          <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">My Events</h2>
-          <div id="organizerEventsGrid" class="events-grid"></div>
+          <div class="dashboard-section-header">
+            <h2 class="section-title" style="text-align: left;">My Events</h2>
+            <p class="dashboard-section-sub" id="organizerEventsCount"></p>
+          </div>
+          <div id="organizerEventsGrid" class="events-grid organizer-events-grid"></div>
         </section>
 
         <!-- REGISTRATIONS TAB -->
