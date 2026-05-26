@@ -682,12 +682,47 @@ input:focus, select:focus, textarea:focus {
 
 /* Responsive */
 .mobile-only {
-  display: none;
+  display: none !important;
+}
+
+.desktop-only {
+  display: flex !important;
 }
 
 @media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: flex !important;
+  }
+  
   .form-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .nav-actions {
+    gap: 0.5rem;
+  }
+  
+  .nav-actions .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .user-chip {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    justify-content: center;
+  }
+  
+  .auth-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .auth-card h1 {
+    font-size: 2rem;
   }
   
   .hero-content h1 {
@@ -696,8 +731,32 @@ input:focus, select:focus, textarea:focus {
   
   .nav-center .main-links {
     display: none;
+    position: absolute;
+    top: 5rem;
+    left: 0;
+    width: 100%;
+    background: var(--bg-card);
+    flex-direction: column;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
   }
   
+  .nav-center .main-links.mobile-show {
+    display: flex;
+  }
+  
+  .nav-center a {
+    padding: 0.75rem 0;
+    font-size: 1.2rem;
+  }
+  
+  .nav-center a.active::after {
+    bottom: 4px;
+    width: 30px;
+  }
+
   .admin-sidebar {
     position: fixed;
     top: 0;

@@ -55,7 +55,9 @@
   }
 
   function apiFetch(url, options) {
-    return fetch(url, Object.assign({ credentials: "same-origin" }, options || {}))
+    const separator = url.indexOf("?") !== -1 ? "&" : "?";
+    const finalUrl = url + separator + "_t=" + Date.now();
+    return fetch(finalUrl, Object.assign({ credentials: "same-origin", cache: "no-store" }, options || {}))
       .then(function (res) {
         return res.json().then(function (data) {
           return { ok: res.ok, status: res.status, data: data };
@@ -179,15 +181,55 @@
     const navAuth = document.getElementById("navAuthArea");
     if (!navAuth) return;
     const user = getCurrentUser();
+    
+    const authWrapper = document.createElement("div");
+    authWrapper.className = "desktop-only";
+    authWrapper.style.display = "flex";
+    authWrapper.style.alignItems = "center";
+    authWrapper.style.gap = "1rem";
+    
     if (!user) {
-      navAuth.innerHTML = '<a class="btn btn-secondary" href="login.html">Login</a><a class="btn btn-primary" href="signup.html">Signup</a>';
-      return;
+      authWrapper.innerHTML = '<a class="btn btn-secondary" href="login.html">Login</a><a class="btn btn-primary" href="signup.html">Signup</a>';
+    } else {
+      authWrapper.innerHTML = '<span class="user-chip"><i class="ph ph-user"></i> <span class="nav-user-name">' + escapeHtml(user.name) + '</span></span><button class="btn btn-secondary logout-btn" type="button">Logout</button>';
     }
-    navAuth.innerHTML = '<span class="user-chip" id="navUserName"></span><button class="btn btn-secondary" id="logoutBtn" type="button">Logout</button>';
-    document.getElementById("navUserName").textContent = user.name;
-    document.getElementById("logoutBtn").addEventListener("click", function () {
-      logout();
+
+    navAuth.innerHTML = "";
+    navAuth.appendChild(authWrapper);
+    
+    const mobileBtn = document.createElement("button");
+    mobileBtn.id = "mobileNavBtn";
+    mobileBtn.className = "mobile-only btn btn-secondary";
+    mobileBtn.innerHTML = '<i class="ph ph-list"></i>';
+    navAuth.appendChild(mobileBtn);
+
+    const mainLinks = document.querySelector(".main-links");
+    if (mainLinks) {
+      const mobileAuthWrapper = authWrapper.cloneNode(true);
+      mobileAuthWrapper.className = "mobile-only mobile-auth-wrapper";
+      mobileAuthWrapper.style.marginTop = "1rem";
+      mobileAuthWrapper.style.paddingTop = "1rem";
+      mobileAuthWrapper.style.borderTop = "1px solid rgba(0,0,0,0.1)";
+      mobileAuthWrapper.style.flexDirection = "column";
+      mobileAuthWrapper.style.width = "100%";
+      const buttons = mobileAuthWrapper.querySelectorAll(".btn");
+      buttons.forEach(function(b) { 
+        b.style.width = "100%"; 
+        b.style.justifyContent = "center"; 
+      });
+      mainLinks.appendChild(mobileAuthWrapper);
+    }
+    
+    const logouts = document.querySelectorAll(".logout-btn");
+    logouts.forEach(function(btn) {
+      btn.addEventListener("click", function() { logout(); });
     });
+
+    if (mobileBtn) {
+      mobileBtn.addEventListener("click", function () {
+        if (mainLinks) mainLinks.classList.toggle("mobile-show");
+      });
+    }
   }
 
   function eventCard(eventItem, actionMode) {
@@ -371,6 +413,13 @@
     document.body.classList.remove("modal-open");
   }
 
+  function getFeaturedEvents(limit) {
+    const allEvents = getEvents();
+    const upcoming = allEvents.filter(isUpcoming);
+    const fallback = allEvents.filter(function (item) { return !isUpcoming(item); }).reverse();
+    return upcoming.concat(fallback).slice(0, limit);
+  }
+
   function setupEventDetailDelegation() {
     document.addEventListener("click", function (e) {
       const detailsBtn = e.target.closest(".event-view-details[data-event-id]");
@@ -418,7 +467,7 @@
   function renderHome() {
     const container = document.getElementById("featuredEventsGrid");
     if (!container) return;
-    const events = getEvents().filter(isUpcoming).slice(0, 4);
+    const events = getFeaturedEvents(3);
     container.innerHTML = events.map(function (item) { return eventCard(item, cardActionMode()); }).join("");
 
     if (!container.dataset.hasListener) {
@@ -1118,4 +1167,3 @@
   setupEventDetailDelegation();
   loadSession().then(boot);
 })();
-

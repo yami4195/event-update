@@ -79,7 +79,7 @@ function validatePassword(string $password): ?string
 function accountStatusMessage(string $status): ?string
 {
     return match ($status) {
-        'suspended' => 'Your account has been suspended. Contact the university admin.',
+        'suspended' => 'Your account has been suspended.',
         'pending'   => 'Your account is pending approval. Please try again later.',
         default     => null,
     };
