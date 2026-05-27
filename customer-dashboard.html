@@ -31,6 +31,16 @@
         <p class="helper-text">Manage your upcoming and registered events.</p>
       </div>
 
+      <section class="card notifications-panel" style="padding: 2rem; margin-bottom: 2rem;">
+        <div class="notifications-panel-header">
+          <h2><i class="ph ph-bell"></i> Notifications <span id="notificationsPanelBadge" class="notif-badge hidden">0</span></h2>
+          <button id="markAllNotificationsRead" class="btn btn-small btn-secondary" type="button">Mark all read</button>
+        </div>
+        <ul id="notificationsPanelList" class="notifications-list">
+          <li class="notifications-empty">Loading notifications...</li>
+        </ul>
+      </section>
+
       <div class="dashboard-grid">
         <section class="card" style="padding: 2.5rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
           <h2 style="display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 1rem; margin-bottom: 2rem;"><i class="ph ph-calendar-check" style="color: var(--color-primary);"></i> Registered Events</h2>
@@ -56,6 +66,6 @@
       <p>&copy; 2026 HU Events - Hawassa University</p>
     </div>
   </footer>
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

@@ -19,7 +19,8 @@ $stats = [
     'organizers'     => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'organizer'")->fetchColumn(),
     'pendingUsers'   => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'pending'")->fetchColumn(),
     'events'         => (int) $pdo->query('SELECT COUNT(*) FROM events')->fetchColumn(),
-    'publishedEvents'=> (int) $pdo->query("SELECT COUNT(*) FROM events WHERE status = 'published'")->fetchColumn(),
+    'upcomingEvents' => (int) $pdo->query("SELECT COUNT(*) FROM events WHERE status = 'upcoming'")->fetchColumn(),
+    'publishedEvents'=> (int) $pdo->query("SELECT COUNT(*) FROM events WHERE status = 'upcoming'")->fetchColumn(),
     'registrations'  => (int) $pdo->query('SELECT COUNT(*) FROM registrations')->fetchColumn(),
 ];
 

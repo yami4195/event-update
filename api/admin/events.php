@@ -12,11 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     requireAdmin();
 
     $stmt = $pdo->query(
-        'SELECT e.*, u.name AS organizer_name, u.email AS organizer_email,
-                (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS registration_count
-         FROM events e
-         INNER JOIN users u ON u.id = e.organizer_id
-         ORDER BY e.event_date DESC, e.event_time DESC'
+        eventSelectSql() . ' ORDER BY e.event_date DESC, e.event_time DESC'
     );
     $events = array_map('formatEventRow', $stmt->fetchAll());
 

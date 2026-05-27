@@ -15,23 +15,24 @@ $when = $_GET['when'] ?? 'all';
 
 $pdo = getDb();
 $params = [];
-$sql = 'SELECT e.*, u.name AS organizer_name, u.email AS organizer_email,
-               (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS registration_count
-        FROM events e
-        INNER JOIN users u ON u.id = e.organizer_id
-        WHERE 1=1';
+$sql = eventSelectSql() . ' WHERE 1=1';
 
 if ($scope === 'mine') {
     $user = requireOrganizer();
     $sql .= ' AND e.organizer_id = ?';
     $params[] = $user['id'];
 } else {
-    $sql .= " AND e.status = 'published'";
+    $sql .= " AND e.status IN ('upcoming', 'completed')";
 }
 
 if ($category !== '' && $category !== 'all') {
-    $sql .= ' AND e.category = ?';
-    $params[] = $category;
+    if (ctype_digit($category)) {
+        $sql .= ' AND e.category_id = ?';
+        $params[] = (int) $category;
+    } else {
+        $sql .= ' AND c.name = ?';
+        $params[] = $category;
+    }
 }
 
 if ($when === 'upcoming') {

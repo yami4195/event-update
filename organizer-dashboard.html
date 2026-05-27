@@ -72,12 +72,6 @@
                 <label>Category
                   <select id="eventCategory" required>
                     <option value="">Select category</option>
-                    <option value="Seminar / Academic Talk">Seminar / Academic Talk</option>
-                    <option value="Training">Training</option>
-                    <option value="Club Programs">Club Programs</option>
-                    <option value="Sport Events">Sport Events</option>
-                    <option value="Cultural Events">Cultural Events</option>
-                    <option value="Hackathons">Hackathons</option>
                   </select>
                 </label>
                 <label>Date
@@ -95,8 +89,8 @@
                 </label>
                 <label>Status
                   <select id="eventStatus" required>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </label>
@@ -135,12 +129,17 @@
             <div id="registrationsList">
               <p class="helper-text">Select "View registrations" on any event.</p>
             </div>
+            <div id="eventFeedbackSection" class="event-feedback-section" hidden>
+              <h3 class="feedback-section-title"><i class="ph ph-star"></i> Event Feedback</h3>
+              <p id="feedbackSummary" class="helper-text"></p>
+              <ul id="eventFeedbackList" class="feedback-list"></ul>
+            </div>
           </div>
         </section>
 
       </div>
     </main>
   </div>
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

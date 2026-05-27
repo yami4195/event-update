@@ -9,19 +9,19 @@ requirePost();
 
 $user = requireOrganizer();
 $input = readEventRequestData();
-$fields = validateEventFields($input);
+$pdo = getDb();
+$fields = validateEventFields($pdo, $input);
 $imagePath = resolveEventImagePath($input, $_FILES['image'] ?? null);
 
-$pdo = getDb();
 $stmt = $pdo->prepare(
-    'INSERT INTO events (organizer_id, title, description, category, event_date, event_time, location, image_path, capacity, status)
+    'INSERT INTO events (organizer_id, title, description, category_id, event_date, event_time, location, image_path, capacity, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
 $stmt->execute([
     $user['id'],
     $fields['title'],
     $fields['description'],
-    $fields['category'],
+    $fields['categoryId'],
     $fields['date'],
     $fields['time'],
     $fields['location'],

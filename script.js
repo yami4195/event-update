@@ -3,6 +3,9 @@
   const API_EVENTS = "api/events";
   const API_REGISTRATIONS = "api/registrations";
   const API_ADMIN = "api/admin";
+  const API_CATEGORIES = "api/categories";
+  const API_NOTIFICATIONS = "api/notifications";
+  const API_FEEDBACK = "api/feedback";
   const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=900&q=80";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -10,6 +13,9 @@
   let eventsCache = [];
   let registeredIds = [];
   let registeredEvents = [];
+  let categoriesCache = [];
+  let notificationsCache = [];
+  let feedbackEventIds = [];
 
   function getCurrentUser() {
     return sessionUser;
@@ -45,6 +51,55 @@
 
   function statusBadge(status) {
     return '<span class="status-badge status-' + status + '">' + status + "</span>";
+  }
+
+  function categorySlug(name) {
+    return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function categoryBadge(name) {
+    if (!name) return "";
+    return '<span class="category-badge category-' + categorySlug(name) + '">' + escapeHtml(name) + "</span>";
+  }
+
+  function loadCategories() {
+    return apiFetch(API_CATEGORIES + "/list.php").then(function (result) {
+      if (result.ok && result.data.success) {
+        categoriesCache = result.data.categories || [];
+      }
+      return categoriesCache;
+    }).catch(function () {
+      categoriesCache = [];
+      return categoriesCache;
+    });
+  }
+
+  function populateCategorySelect(selectEl, includeEmpty) {
+    if (!selectEl) return;
+    const current = selectEl.value;
+    let html = includeEmpty
+      ? '<option value="">Select category</option>'
+      : '<option value="all">All Categories</option>';
+    categoriesCache.forEach(function (cat) {
+      html += '<option value="' + cat.id + '">' + escapeHtml(cat.name) + "</option>";
+    });
+    selectEl.innerHTML = html;
+    if (current) selectEl.value = current;
+  }
+
+  function renderCategoryFilterButtons(container, activeValue, onSelect) {
+    if (!container) return;
+    let html = '<button type="button" class="category-filter-btn' + (activeValue === "all" ? " active" : "") + '" data-category="all">All</button>';
+    categoriesCache.forEach(function (cat) {
+      const active = String(activeValue) === String(cat.id) ? " active" : "";
+      html += '<button type="button" class="category-filter-btn' + active + '" data-category="' + cat.id + '">' + escapeHtml(cat.name) + "</button>";
+    });
+    container.innerHTML = html;
+    container.querySelectorAll(".category-filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        onSelect(btn.dataset.category);
+      });
+    });
   }
 
   function capacityLine(eventItem) {
@@ -145,6 +200,349 @@
     return new Date(eventItem.date + "T" + time).getTime() >= Date.now();
   }
 
+  function isEventEnded(eventItem) {
+    if (eventItem.status === "cancelled") return false;
+    if (eventItem.status === "completed") return true;
+    return !isUpcoming(eventItem);
+  }
+
+  function hasFeedbackFor(eventId) {
+    return feedbackEventIds.indexOf(Number(eventId)) !== -1;
+  }
+
+  function canLeaveFeedback(eventItem) {
+    const user = getCurrentUser();
+    if (!user || !isStudent(user) || !isRegistered(eventItem.id)) return false;
+    if (eventItem.status === "cancelled") return false;
+    if (hasFeedbackFor(eventItem.id)) return false;
+    return isEventEnded(eventItem);
+  }
+
+  function formatNotifTime(iso) {
+    if (!iso) return "";
+    const d = new Date(iso.replace(" ", "T"));
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString();
+  }
+
+  function loadNotifications() {
+    const user = getCurrentUser();
+    if (!user) {
+      notificationsCache = [];
+      return Promise.resolve([]);
+    }
+    return apiFetch(API_NOTIFICATIONS + "/mine.php").then(function (result) {
+      if (result.ok && result.data.success) {
+        notificationsCache = result.data.notifications || [];
+      } else {
+        notificationsCache = [];
+      }
+      return notificationsCache;
+    }).catch(function () {
+      notificationsCache = [];
+      return [];
+    });
+  }
+
+  function loadFeedbackMine() {
+    const user = getCurrentUser();
+    if (!user || !isStudent(user)) {
+      feedbackEventIds = [];
+      return Promise.resolve([]);
+    }
+    return apiFetch(API_FEEDBACK + "/mine.php").then(function (result) {
+      if (result.ok && result.data.success) {
+        feedbackEventIds = (result.data.eventIds || []).map(Number);
+      } else {
+        feedbackEventIds = [];
+      }
+      return feedbackEventIds;
+    }).catch(function () {
+      feedbackEventIds = [];
+      return [];
+    });
+  }
+
+  function getUnreadNotificationCount() {
+    return notificationsCache.filter(function (n) { return !n.isRead; }).length;
+  }
+
+  function renderNotificationsList(container, options) {
+    if (!container) return;
+    const limit = options && options.limit ? options.limit : 0;
+    const items = limit > 0 ? notificationsCache.slice(0, limit) : notificationsCache;
+
+    if (!items.length) {
+      container.innerHTML = '<li class="notifications-empty">No notifications yet.</li>';
+      return;
+    }
+
+    container.innerHTML = items.map(function (n) {
+      const cls = n.isRead ? "" : " unread";
+      return (
+        '<li class="notif-item' + cls + '" data-notif-id="' + n.id + '">' +
+        escapeHtml(n.message) +
+        '<span class="notif-time">' + escapeHtml(formatNotifTime(n.createdAt)) + "</span></li>"
+      );
+    }).join("");
+  }
+
+  function updateNotificationBadges() {
+    const count = getUnreadNotificationCount();
+    document.querySelectorAll(".notif-badge").forEach(function (badge) {
+      if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : String(count);
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    });
+  }
+
+  function markNotificationReadById(notificationId) {
+    return apiFetch(API_NOTIFICATIONS + "/read.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationId: notificationId })
+    }).then(function () {
+      return loadNotifications();
+    });
+  }
+
+  function markAllNotificationsRead() {
+    return apiFetch(API_NOTIFICATIONS + "/read-all.php", { method: "POST" }).then(function () {
+      return loadNotifications();
+    });
+  }
+
+  function refreshNotificationsUI() {
+    updateNotificationBadges();
+    const panelList = document.getElementById("notificationsPanelList");
+    if (panelList) renderNotificationsList(panelList);
+    const dropdownList = document.getElementById("notifDropdownList");
+    if (dropdownList) renderNotificationsList(dropdownList, { limit: 8 });
+  }
+
+  function setupNotificationBell() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    const navAuth = document.getElementById("navAuthArea");
+    const desktopWrap = navAuth && navAuth.querySelector(".desktop-only");
+    if (!desktopWrap || desktopWrap.querySelector(".nav-notifications-wrap")) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "nav-notifications-wrap";
+    wrap.innerHTML =
+      '<button type="button" class="nav-notif-btn" id="navNotifBtn" aria-label="Notifications">' +
+      '<i class="ph ph-bell"></i><span class="notif-badge hidden">0</span></button>' +
+      '<div class="notif-dropdown" id="notifDropdown">' +
+      '<div class="notif-dropdown-header"><span>Notifications</span>' +
+      '<button type="button" class="btn btn-small btn-secondary" id="notifMarkAllBtn">Mark all read</button></div>' +
+      '<ul id="notifDropdownList" class="notifications-list"></ul></div>';
+
+    const chip = desktopWrap.querySelector(".user-chip");
+    if (chip) desktopWrap.insertBefore(wrap, chip);
+    else desktopWrap.prepend(wrap);
+
+    const btn = document.getElementById("navNotifBtn");
+    const dropdown = document.getElementById("notifDropdown");
+    const markAllBtn = document.getElementById("notifMarkAllBtn");
+
+    if (btn && dropdown) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        dropdown.classList.toggle("open");
+        if (dropdown.classList.contains("open")) refreshNotificationsUI();
+      });
+      document.addEventListener("click", function (e) {
+        if (!wrap.contains(e.target)) dropdown.classList.remove("open");
+      });
+    }
+
+    if (markAllBtn) {
+      markAllBtn.addEventListener("click", function () {
+        markAllNotificationsRead().then(refreshNotificationsUI);
+      });
+    }
+
+    const dropdownList = document.getElementById("notifDropdownList");
+    if (dropdownList) {
+      dropdownList.addEventListener("click", function (e) {
+        const item = e.target.closest(".notif-item[data-notif-id]");
+        if (!item) return;
+        markNotificationReadById(Number(item.dataset.notifId)).then(refreshNotificationsUI);
+      });
+    }
+  }
+
+  function setupNotificationsPanel() {
+    const list = document.getElementById("notificationsPanelList");
+    if (!list) return;
+
+    const markAllBtn = document.getElementById("markAllNotificationsRead");
+    if (markAllBtn) {
+      markAllBtn.addEventListener("click", function () {
+        markAllNotificationsRead().then(refreshNotificationsUI);
+      });
+    }
+
+    list.addEventListener("click", function (e) {
+      const item = e.target.closest(".notif-item[data-notif-id]");
+      if (!item) return;
+      markNotificationReadById(Number(item.dataset.notifId)).then(refreshNotificationsUI);
+    });
+
+    refreshNotificationsUI();
+  }
+
+  function ensureFeedbackModal() {
+    if (document.getElementById("feedbackModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "feedbackModal";
+    modal.className = "event-modal feedback-modal";
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="event-modal-backdrop" data-close-feedback></div>' +
+      '<div class="event-modal-dialog" role="dialog" aria-modal="true">' +
+      '<button type="button" class="event-modal-close" data-close-feedback aria-label="Close">&times;</button>' +
+      '<div class="event-modal-content" style="padding:1.5rem;">' +
+      '<h2 id="feedbackModalTitle">Leave Feedback</h2>' +
+      '<p id="feedbackModalEvent" class="helper-text"></p>' +
+      '<form id="feedbackForm" class="feedback-form">' +
+      '<input id="feedbackEventId" type="hidden">' +
+      '<label>Rating<div class="star-rating" id="starRating">' +
+      '<button type="button" data-rating="1" aria-label="1 star">★</button>' +
+      '<button type="button" data-rating="2" aria-label="2 stars">★</button>' +
+      '<button type="button" data-rating="3" aria-label="3 stars">★</button>' +
+      '<button type="button" data-rating="4" aria-label="4 stars">★</button>' +
+      '<button type="button" data-rating="5" aria-label="5 stars">★</button></div></label>' +
+      '<input id="feedbackRatingValue" type="hidden" value="0">' +
+      '<label>Comment (optional)<textarea id="feedbackComment" rows="3" placeholder="Share your experience..."></textarea></label>' +
+      '<p id="feedbackMessage" class="message"></p>' +
+      '<button class="btn btn-primary" type="submit">Submit Feedback</button>' +
+      "</form></div></div>";
+
+    document.body.appendChild(modal);
+
+    let selectedRating = 0;
+    const stars = modal.querySelectorAll(".star-rating button");
+    const ratingInput = document.getElementById("feedbackRatingValue");
+
+    function paintStars(value) {
+      stars.forEach(function (star) {
+        const r = Number(star.dataset.rating);
+        star.classList.toggle("active", r <= value);
+      });
+    }
+
+    stars.forEach(function (star) {
+      star.addEventListener("click", function () {
+        selectedRating = Number(star.dataset.rating);
+        ratingInput.value = String(selectedRating);
+        paintStars(selectedRating);
+      });
+    });
+
+    modal.addEventListener("click", function (e) {
+      if (e.target.closest("[data-close-feedback]")) closeFeedbackModal();
+    });
+
+    document.getElementById("feedbackForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const msg = document.getElementById("feedbackMessage");
+      const eventId = Number(document.getElementById("feedbackEventId").value);
+      const rating = Number(ratingInput.value);
+      const comment = document.getElementById("feedbackComment").value.trim();
+
+      if (!rating || rating < 1 || rating > 5) {
+        if (msg) msg.textContent = "Please select a rating from 1 to 5 stars.";
+        return;
+      }
+
+      apiFetch(API_FEEDBACK + "/create.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: eventId, rating: rating, comment: comment })
+      }).then(function (result) {
+        if (!result.ok || !result.data.success) {
+          if (msg) msg.textContent = result.data.message || "Could not submit feedback.";
+          return;
+        }
+        closeFeedbackModal();
+        return loadFeedbackMine().then(function () {
+          refreshEventViews();
+          window.alert(result.data.message || "Thank you for your feedback.");
+        });
+      }).catch(function () {
+        if (msg) msg.textContent = "Could not reach the server.";
+      });
+    });
+  }
+
+  function openFeedbackModal(eventItem) {
+    ensureFeedbackModal();
+    const modal = document.getElementById("feedbackModal");
+    if (!modal || !eventItem) return;
+
+    document.getElementById("feedbackModalEvent").textContent = eventItem.title + " · " + eventItem.date;
+    document.getElementById("feedbackEventId").value = String(eventItem.id);
+    document.getElementById("feedbackComment").value = "";
+    document.getElementById("feedbackRatingValue").value = "0";
+    document.getElementById("feedbackMessage").textContent = "";
+    modal.querySelectorAll(".star-rating button").forEach(function (s) { s.classList.remove("active"); });
+
+    modal.hidden = false;
+    document.body.classList.add("modal-open");
+  }
+
+  function closeFeedbackModal() {
+    const modal = document.getElementById("feedbackModal");
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+
+  function loadOrganizerEventFeedback(eventId) {
+    const section = document.getElementById("eventFeedbackSection");
+    const list = document.getElementById("eventFeedbackList");
+    const summary = document.getElementById("feedbackSummary");
+    if (!section || !list) return;
+
+    section.hidden = false;
+    list.innerHTML = '<li class="notifications-empty">Loading feedback...</li>';
+    if (summary) summary.textContent = "";
+
+    apiFetch(API_FEEDBACK + "/for-event.php?event_id=" + eventId).then(function (result) {
+      if (!result.ok || !result.data.success) {
+        list.innerHTML = "<li>Could not load feedback.</li>";
+        return;
+      }
+      const avg = result.data.averageRating;
+      const count = result.data.count || 0;
+      if (summary) {
+        summary.textContent = count
+          ? count + " review(s)" + (avg != null ? " · Average: " + avg + " / 5" : "")
+          : "No feedback submitted yet for this event.";
+      }
+      const items = result.data.feedback || [];
+      if (!items.length) {
+        list.innerHTML = '<li class="notifications-empty">No feedback yet.</li>';
+        return;
+      }
+      list.innerHTML = items.map(function (f) {
+        const stars = "★".repeat(f.rating) + "☆".repeat(5 - f.rating);
+        const comment = f.comment ? "<p>" + escapeHtml(f.comment) + "</p>" : "";
+        return (
+          "<li><div class=\"feedback-stars\">" + stars + "</div>" +
+          "<strong>" + escapeHtml(f.userName || "Student") + "</strong>" +
+          comment + '<span class="notif-time">' + escapeHtml(formatNotifTime(f.createdAt)) + "</span></li>"
+        );
+      }).join("");
+    });
+  }
+
   function cardActionMode() {
     const page = document.body.dataset.page;
     const user = getCurrentUser();
@@ -230,6 +628,9 @@
         if (mainLinks) mainLinks.classList.toggle("mobile-show");
       });
     }
+
+    setupNotificationBell();
+    refreshNotificationsUI();
   }
 
   function eventCard(eventItem, actionMode) {
@@ -249,16 +650,32 @@
     } else if (actionMode === "unregister") {
       if (isUpcoming(eventItem)) {
         actionButton = '<button class="btn btn-danger event-unregister" data-event-id="' + eventItem.id + '" type="button">Unregister</button>';
+      } else if (canLeaveFeedback(eventItem)) {
+        actionButton = '<button class="btn btn-primary event-feedback" data-event-id="' + eventItem.id + '" type="button"><i class="ph ph-star"></i> Leave Feedback</button>';
+      } else if (hasFeedbackFor(eventItem.id)) {
+        actionButton = '<span class="feedback-done-label"><i class="ph ph-check-circle"></i> Feedback submitted</span>';
       } else {
         actionButton = '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
       }
+    } else if (actionMode === "feedback") {
+      actionButton = '<button class="btn btn-primary event-feedback" data-event-id="' + eventItem.id + '" type="button"><i class="ph ph-star"></i> Leave Feedback</button>';
     }
     const detailsBtn = '<button class="btn btn-secondary btn-small event-view-details" data-event-id="' + eventItem.id + '" type="button">View Details</button>';
     const actionsHtml = actionButton
       ? '<div class="event-card-actions">' + detailsBtn + actionButton + "</div>"
       : '<div class="event-card-actions">' + detailsBtn + "</div>";
 
-    return '<article class="event-card"><img src="' + (eventItem.imageUrl || DEFAULT_IMAGE) + '" alt="' + escapeHtml(eventItem.title) + '"><div class="event-card-content"><h3>' + escapeHtml(eventItem.title) + '</h3><p class="meta"><strong>Date:</strong> ' + eventItem.date + " " + eventItem.time + '</p><p class="meta"><strong>Category:</strong> ' + escapeHtml(eventItem.category) + '</p><p class="meta"><strong>Location:</strong> ' + escapeHtml(eventItem.location) + "</p>" + capacityLine(eventItem) + actionsHtml + "</div></article>";
+    return (
+      '<article class="event-card">' +
+      '<div class="event-card-media">' +
+      '<img src="' + (eventItem.imageUrl || DEFAULT_IMAGE) + '" alt="' + escapeHtml(eventItem.title) + '">' +
+      categoryBadge(eventItem.category) +
+      "</div>" +
+      '<div class="event-card-content"><h3>' + escapeHtml(eventItem.title) + '</h3>' +
+      '<p class="meta"><strong>Date:</strong> ' + eventItem.date + " " + eventItem.time + '</p>' +
+      '<p class="meta"><strong>Location:</strong> ' + escapeHtml(eventItem.location) + "</p>" +
+      capacityLine(eventItem) + actionsHtml + "</div></article>"
+    );
   }
 
   function findEventById(eventId) {
@@ -315,6 +732,12 @@
         if (isUpcoming(eventItem)) {
           return '<button class="btn btn-danger" id="eventModalUnregisterBtn" type="button">Unregister</button>';
         }
+        if (canLeaveFeedback(eventItem)) {
+          return '<button class="btn btn-primary event-feedback" data-event-id="' + eventItem.id + '" type="button"><i class="ph ph-star"></i> Leave Feedback</button>';
+        }
+        if (hasFeedbackFor(eventItem.id)) {
+          return '<span class="feedback-done-label"><i class="ph ph-check-circle"></i> You submitted feedback</span>';
+        }
         return '<button class="btn btn-secondary" type="button" disabled>Event Ended</button>';
       }
       if (eventItem.isFull) {
@@ -354,7 +777,7 @@
 
     let metaHtml =
       '<p><strong>Date:</strong> ' + escapeHtml(eventItem.date) + " " + escapeHtml(eventItem.time) + "</p>" +
-      '<p><strong>Category:</strong> ' + escapeHtml(eventItem.category) + "</p>" +
+      "<p><strong>Category:</strong> " + categoryBadge(eventItem.category) + "</p>" +
       '<p><strong>Location:</strong> ' + escapeHtml(eventItem.location) + "</p>";
 
     if (eventItem.organizerName) {
@@ -422,6 +845,14 @@
 
   function setupEventDetailDelegation() {
     document.addEventListener("click", function (e) {
+      const feedbackBtn = e.target.closest(".event-feedback[data-event-id]");
+      if (feedbackBtn) {
+        e.preventDefault();
+        const eventItem = findEventById(feedbackBtn.dataset.eventId);
+        if (eventItem) openFeedbackModal(eventItem);
+        return;
+      }
+
       const detailsBtn = e.target.closest(".event-view-details[data-event-id]");
       if (!detailsBtn) return;
       e.preventDefault();
@@ -440,7 +871,8 @@
         window.alert(result.data.message || "Registration failed.");
         return;
       }
-      return loadRegistered().then(function () {
+      return loadRegistered().then(loadNotifications).then(function () {
+        refreshNotificationsUI();
         if (onDone) onDone();
         window.alert("Registration successful.");
       });
@@ -457,7 +889,8 @@
         window.alert(result.data.message || "Could not unregister.");
         return;
       }
-      return loadRegistered().then(function () {
+      return loadRegistered().then(loadNotifications).then(function () {
+        refreshNotificationsUI();
         if (onDone) onDone();
         window.alert("Registration cancelled.");
       });
@@ -506,11 +939,23 @@
   function renderEventsPage() {
     const grid = document.getElementById("eventsGrid");
     const categoryFilter = document.getElementById("categoryFilter");
+    const categoryFilterBar = document.getElementById("categoryFilterBar");
     const dateFilter = document.getElementById("dateFilter");
     const showMoreBtn = document.getElementById("seeMoreEvents");
     if (!grid || !categoryFilter || !dateFilter || !showMoreBtn) return;
 
+    populateCategorySelect(categoryFilter, false);
+
     let limit = 4;
+
+    function setCategory(value) {
+      categoryFilter.value = value;
+      if (categoryFilterBar) {
+        renderCategoryFilterButtons(categoryFilterBar, value, setCategory);
+      }
+      limit = 4;
+      draw();
+    }
 
     function draw() {
       const params = {
@@ -524,9 +969,12 @@
       });
     }
 
+    if (categoryFilterBar) {
+      renderCategoryFilterButtons(categoryFilterBar, categoryFilter.value, setCategory);
+    }
+
     categoryFilter.addEventListener("change", function () {
-      limit = 4;
-      draw();
+      setCategory(categoryFilter.value);
     });
     dateFilter.addEventListener("change", function () {
       limit = 4;
@@ -681,7 +1129,9 @@
       });
       const registered = registeredEvents;
       availableGrid.innerHTML = available.slice(0, availableLimit).map(function (item) { return eventCard(item, "register"); }).join("");
-      registeredGrid.innerHTML = registered.slice(0, registeredLimit).map(function (item) { return eventCard(item, "unregister"); }).join("");
+      registeredGrid.innerHTML = registered.slice(0, registeredLimit).map(function (item) {
+        return eventCard(item, registeredActionMode(item));
+      }).join("");
       availableMoreBtn.style.display = available.length > availableLimit ? "inline-flex" : "none";
       registeredMoreBtn.style.display = registered.length > registeredLimit ? "inline-flex" : "none";
     }
@@ -694,6 +1144,13 @@
       registeredLimit += 4;
       draw();
     });
+
+    function registeredActionMode(item) {
+      if (isUpcoming(item)) return "unregister";
+      if (canLeaveFeedback(item)) return "feedback";
+      if (hasFeedbackFor(item.id)) return "unregister";
+      return "unregister";
+    }
 
     function handleGridClick(event) {
       const registerBtn = event.target.closest(".event-action[data-event-id]");
@@ -820,6 +1277,10 @@
       if (targetPane) targetPane.classList.add("active");
       if (topbarTitle && titleText) topbarTitle.textContent = titleText;
       if (adminSidebar) adminSidebar.classList.remove("open");
+      const feedbackSection = document.getElementById("eventFeedbackSection");
+      if (feedbackSection && tabId !== "section-registrations") {
+        feedbackSection.hidden = true;
+      }
     }
 
     sidebarLinks.forEach(function (link) {
@@ -863,6 +1324,8 @@
       updateStats();
     }
 
+    populateCategorySelect(document.getElementById("eventCategory"), true);
+
     function clearForm() {
       form.reset();
       editId.value = "";
@@ -880,7 +1343,7 @@
       fd.append("date", document.getElementById("eventDate").value);
       fd.append("time", document.getElementById("eventTime").value);
       fd.append("location", document.getElementById("eventLocation").value.trim());
-      fd.append("category", document.getElementById("eventCategory").value);
+      fd.append("categoryId", document.getElementById("eventCategory").value);
       fd.append("status", document.getElementById("eventStatus").value);
       const capacityVal = document.getElementById("eventCapacity").value;
       if (capacityVal) fd.append("capacity", capacityVal);
@@ -889,7 +1352,7 @@
       const imageFile = document.getElementById("eventImageFile").files[0];
       if (imageFile) fd.append("image", imageFile);
 
-      if (!fd.get("title") || !fd.get("description") || !fd.get("date") || !fd.get("time") || !fd.get("location") || !fd.get("category")) {
+      if (!fd.get("title") || !fd.get("description") || !fd.get("date") || !fd.get("time") || !fd.get("location") || !fd.get("categoryId")) {
         if (formMessage) formMessage.textContent = "Please fill all required fields.";
         return;
       }
@@ -947,6 +1410,7 @@
           if (regs) regs.innerHTML = entries ? "<ul>" + entries + "</ul>" : "<p class='helper-text'>No registrations yet.</p>";
           const regTitle = document.getElementById("registrationEventTitle");
           if (regTitle) regTitle.textContent = "for " + (result.data.eventTitle || target.title);
+          loadOrganizerEventFeedback(id);
           switchTab("section-registrations", "Registrations");
         });
       }
@@ -958,10 +1422,10 @@
         document.getElementById("eventDate").value = target.date;
         document.getElementById("eventTime").value = target.time;
         document.getElementById("eventLocation").value = target.location;
-        document.getElementById("eventCategory").value = target.category;
+        document.getElementById("eventCategory").value = target.categoryId || "";
         document.getElementById("eventImageUrl").value = target.imageUrl || "";
         document.getElementById("eventCapacity").value = target.capacity != null ? target.capacity : "";
-        document.getElementById("eventStatus").value = target.status || "published";
+        document.getElementById("eventStatus").value = target.status || "upcoming";
         document.getElementById("eventImageFile").value = "";
         if (cancelEditBtn) cancelEditBtn.style.display = "inline-flex";
         const fTitle = document.getElementById("formTitle");
@@ -1073,7 +1537,7 @@
           return;
         }
         list.innerHTML = result.data.events.map(function (item) {
-          return '<article class="event-card"><img src="' + (item.imageUrl || DEFAULT_IMAGE) + '" alt="' + item.title + '"><div class="event-card-content"><h3>' + item.title + " " + statusBadge(item.status) + '</h3><p class="meta"><strong>Organizer:</strong> ' + item.organizerName + '</p><p class="meta"><strong>Date:</strong> ' + item.date + " " + item.time + "</p>" + capacityLine(item) + '<div class="admin-event-actions"><select class="admin-event-status" data-event-id="' + item.id + '"><option value="published"' + (item.status === "published" ? " selected" : "") + '>Published</option><option value="draft"' + (item.status === "draft" ? " selected" : "") + '>Draft</option><option value="cancelled"' + (item.status === "cancelled" ? " selected" : "") + ">Cancelled</option></select></div></div></article>";
+          return '<article class="event-card"><img src="' + (item.imageUrl || DEFAULT_IMAGE) + '" alt="' + item.title + '"><div class="event-card-content"><h3>' + item.title + " " + statusBadge(item.status) + " " + categoryBadge(item.category) + '</h3><p class="meta"><strong>Organizer:</strong> ' + item.organizerName + '</p><p class="meta"><strong>Date:</strong> ' + item.date + " " + item.time + "</p>" + capacityLine(item) + '<div class="admin-event-actions"><select class="admin-event-status" data-event-id="' + item.id + '"><option value="upcoming"' + (item.status === "upcoming" ? " selected" : "") + '>Upcoming</option><option value="completed"' + (item.status === "completed" ? " selected" : "") + '>Completed</option><option value="cancelled"' + (item.status === "cancelled" ? " selected" : "") + ">Cancelled</option></select></div></div></article>";
         }).join("");
       });
     }
@@ -1153,6 +1617,11 @@
 
     if (getCurrentUser() && isStudent(getCurrentUser()) && (page === "events" || page === "customer-dashboard" || page === "home")) {
       loads.push(loadRegistered());
+      loads.push(loadFeedbackMine());
+    }
+
+    if (getCurrentUser()) {
+      loads.push(loadNotifications());
     }
 
     return Promise.all(loads).then(function () {
@@ -1161,9 +1630,11 @@
       setupCustomerDashboard();
       setupOrganizerDashboard();
       setupAdminDashboard();
+      setupNotificationsPanel();
+      refreshNotificationsUI();
     });
   }
 
   setupEventDetailDelegation();
-  loadSession().then(boot);
+  loadSession().then(loadCategories).then(boot);
 })();

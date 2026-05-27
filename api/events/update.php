@@ -23,19 +23,19 @@ if (!$row) {
 
 assertOrganizerOwnsEvent($user, $row);
 
-$fields = validateEventFields($input);
+$fields = validateEventFields($pdo, $input);
 $imagePath = resolveEventImagePath($input, $_FILES['image'] ?? null, $row['image_path']);
 
 $stmt = $pdo->prepare(
     'UPDATE events
-     SET title = ?, description = ?, category = ?, event_date = ?, event_time = ?,
+     SET title = ?, description = ?, category_id = ?, event_date = ?, event_time = ?,
          location = ?, image_path = ?, capacity = ?, status = ?
      WHERE id = ?'
 );
 $stmt->execute([
     $fields['title'],
     $fields['description'],
-    $fields['category'],
+    $fields['categoryId'],
     $fields['date'],
     $fields['time'],
     $fields['location'],

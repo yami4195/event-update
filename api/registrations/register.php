@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/events.php';
+require_once dirname(__DIR__, 2) . '/includes/notifications.php';
 
 requirePost();
 
@@ -18,7 +19,7 @@ if ($eventId <= 0) {
 $pdo = getDb();
 $event = fetchEventById($pdo, $eventId);
 
-if (!$event || $event['status'] !== 'published') {
+if (!$event || !isRegisterableEventStatus($event['status'])) {
     jsonResponse(['success' => false, 'message' => 'Event not available for registration.'], 404);
 }
 
@@ -46,6 +47,12 @@ if ($event['capacity'] !== null) {
 
 $insert = $pdo->prepare('INSERT INTO registrations (event_id, user_id) VALUES (?, ?)');
 $insert->execute([$eventId, $user['id']]);
+
+createNotification(
+    $pdo,
+    $user['id'],
+    'You are registered for "' . $event['title'] . '" on ' . $event['event_date'] . '.'
+);
 
 jsonResponse([
     'success' => true,

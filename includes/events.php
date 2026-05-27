@@ -3,17 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/upload.php';
+require_once __DIR__ . '/categories.php';
 
-const EVENT_CATEGORIES = [
-    'Seminar / Academic Talk',
-    'Training',
-    'Club Programs',
-    'Sport Events',
-    'Cultural Events',
-    'Hackathons',
-];
-
-const EVENT_STATUSES = ['draft', 'published', 'cancelled'];
+const EVENT_STATUSES = ['upcoming', 'completed', 'cancelled', 'published', 'draft'];
 
 function requireOrganizer(): array
 {
@@ -33,14 +25,29 @@ function requireStudent(): array
     return $user;
 }
 
-function isValidCategory(string $category): bool
-{
-    return in_array($category, EVENT_CATEGORIES, true);
-}
-
 function isValidEventStatus(string $status): bool
 {
     return in_array($status, EVENT_STATUSES, true);
+}
+
+function isPublicEventStatus(string $status): bool
+{
+    return in_array($status, ['upcoming', 'completed', 'published'], true);
+}
+
+function isRegisterableEventStatus(string $status): bool
+{
+    return in_array($status, ['upcoming', 'published'], true);
+}
+
+function normalizeEventStatus(string $status): string
+{
+    $status = strtolower(trim($status));
+
+    return match ($status) {
+        'published', 'draft' => 'upcoming',
+        default              => $status,
+    };
 }
 
 function formatEventTime(string $time): string
@@ -71,35 +78,40 @@ function formatEventRow(array $row): array
     $registrationCount = (int) ($row['registration_count'] ?? 0);
 
     return [
-        'id'                => (int) $row['id'],
-        'title'             => $row['title'],
-        'description'       => $row['description'],
-        'category'          => $row['category'],
-        'date'              => $row['event_date'],
-        'time'              => formatEventTime($row['event_time']),
-        'location'          => $row['location'],
-        'imageUrl'          => resolveEventImageUrl($row['image_path'] ?: null),
-        'capacity'          => $capacity,
-        'status'            => $row['status'],
-        'organizerId'       => (int) $row['organizer_id'],
-        'organizerName'     => $row['organizer_name'] ?? '',
-        'organizerEmail'    => $row['organizer_email'] ?? '',
-        'registrationCount' => $registrationCount,
-        'spotsLeft'         => $capacity !== null ? max(0, $capacity - $registrationCount) : null,
-        'isFull'            => $capacity !== null && $registrationCount >= $capacity,
+        'id'                  => (int) $row['id'],
+        'title'               => $row['title'],
+        'description'         => $row['description'],
+        'categoryId'          => (int) ($row['category_id'] ?? 0),
+        'category'            => $row['category_name'] ?? '',
+        'categoryDescription' => $row['category_description'] ?? '',
+        'date'                => $row['event_date'],
+        'time'                => formatEventTime($row['event_time']),
+        'location'            => $row['location'],
+        'imageUrl'            => resolveEventImageUrl($row['image_path'] ?: null),
+        'capacity'            => $capacity,
+        'status'              => $row['status'],
+        'organizerId'         => (int) $row['organizer_id'],
+        'organizerName'       => $row['organizer_name'] ?? '',
+        'organizerEmail'      => $row['organizer_email'] ?? '',
+        'registrationCount'   => $registrationCount,
+        'spotsLeft'           => $capacity !== null ? max(0, $capacity - $registrationCount) : null,
+        'isFull'              => $capacity !== null && $registrationCount >= $capacity,
     ];
+}
+
+function eventSelectSql(): string
+{
+    return 'SELECT e.*, c.name AS category_name, c.description AS category_description,
+                   u.name AS organizer_name, u.email AS organizer_email,
+                   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS registration_count
+            FROM events e
+            INNER JOIN categories c ON c.id = e.category_id
+            INNER JOIN users u ON u.id = e.organizer_id';
 }
 
 function fetchEventById(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare(
-        'SELECT e.*, u.name AS organizer_name, u.email AS organizer_email,
-                (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id) AS registration_count
-         FROM events e
-         INNER JOIN users u ON u.id = e.organizer_id
-         WHERE e.id = ?
-         LIMIT 1'
-    );
+    $stmt = $pdo->prepare(eventSelectSql() . ' WHERE e.id = ? LIMIT 1');
     $stmt->execute([$id]);
     $row = $stmt->fetch();
 
@@ -158,23 +170,21 @@ function resolveEventImagePath(array $input, ?array $file, ?string $existingPath
     return $existingPath;
 }
 
-function validateEventFields(array $input): array
+function validateEventFields(PDO $pdo, array $input): array
 {
     $title = trim((string) ($input['title'] ?? ''));
     $description = trim((string) ($input['description'] ?? ''));
-    $category = trim((string) ($input['category'] ?? ''));
+    $categoryInput = $input['categoryId'] ?? $input['category'] ?? '';
     $date = trim((string) ($input['date'] ?? ''));
     $time = trim((string) ($input['time'] ?? ''));
     $location = trim((string) ($input['location'] ?? ''));
-    $status = trim((string) ($input['status'] ?? 'published'));
+    $status = normalizeEventStatus((string) ($input['status'] ?? 'upcoming'));
 
     if ($title === '' || $description === '' || $location === '') {
         jsonResponse(['success' => false, 'message' => 'Please fill all required fields.'], 422);
     }
 
-    if (!isValidCategory($category)) {
-        jsonResponse(['success' => false, 'message' => 'Invalid category.'], 422);
-    }
+    $categoryId = resolveCategoryId($pdo, $categoryInput);
 
     if ($date === '' || $time === '') {
         jsonResponse(['success' => false, 'message' => 'Date and time are required.'], 422);
@@ -184,15 +194,17 @@ function validateEventFields(array $input): array
         jsonResponse(['success' => false, 'message' => 'Invalid event status.'], 422);
     }
 
-    $eventStart = strtotime($date . ' ' . $time);
-    if ($eventStart !== false && $eventStart < time()) {
-        jsonResponse(['success' => false, 'message' => 'Event date and time must be in the future.'], 422);
+    if ($status === 'upcoming') {
+        $eventStart = strtotime($date . ' ' . $time);
+        if ($eventStart !== false && $eventStart < time()) {
+            jsonResponse(['success' => false, 'message' => 'Upcoming events must have a future date and time.'], 422);
+        }
     }
 
     return [
         'title'       => $title,
         'description' => $description,
-        'category'    => $category,
+        'categoryId'  => $categoryId,
         'date'        => $date,
         'time'        => $time,
         'location'    => $location,
